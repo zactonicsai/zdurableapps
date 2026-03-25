@@ -1,0 +1,742 @@
+# ============================================================================
+# Example: Order Processing System
+# Temporal Interface Definition — conforms to TIDS v1.0.0
+# ============================================================================
+
+schema_version: "1.0.0"
+
+# ---------------------------------------------------------------------------
+# METADATA
+# ---------------------------------------------------------------------------
+metadata:
+  name: "OrderProcessingSystem"
+  description: >
+    Handles end-to-end order lifecycle: validation, payment, inventory
+    reservation, fulfillment, and notification — with compensating
+    transactions on failure.
+  language:
+    - python
+    - typescript
+  namespace: "orders-prod"
+  default_task_queue: "order-processing"
+  labels:
+    team: "commerce-platform"
+    domain: "orders"
+
+# ---------------------------------------------------------------------------
+# TYPES
+# ---------------------------------------------------------------------------
+types:
+  - name: Money
+    kind: struct
+    fields:
+      - name: amount
+        type: int
+        required: true
+        description: "Amount in smallest currency unit (cents)"
+        constraints:
+          min: 0
+      - name: currency
+        type: string
+        required: true
+        default: "USD"
+        constraints:
+          pattern: "^[A-Z]{3}$"
+
+  - name: Address
+    kind: struct
+    fields:
+      - name: street
+        type: string
+        required: true
+      - name: city
+        type: string
+        required: true
+      - name: state
+        type: string
+        required: false
+      - name: postal_code
+        type: string
+        required: true
+      - name: country_code
+        type: string
+        required: true
+        constraints:
+          pattern: "^[A-Z]{2}$"
+
+  - name: OrderItem
+    kind: struct
+    fields:
+      - name: sku
+        type: string
+        required: true
+      - name: quantity
+        type: int
+        required: true
+        constraints:
+          min: 1
+      - name: unit_price
+        type: Money
+        required: true
+
+  - name: OrderInput
+    kind: struct
+    fields:
+      - name: order_id
+        type: string
+        required: true
+      - name: customer_id
+        type: string
+        required: true
+      - name: items
+        type: "list<OrderItem>"
+        required: true
+      - name: shipping_address
+        type: Address
+        required: true
+      - name: total
+        type: Money
+        required: true
+
+  - name: OrderResult
+    kind: struct
+    fields:
+      - name: order_id
+        type: string
+        required: true
+      - name: status
+        type: OrderStatus
+        required: true
+      - name: tracking_number
+        type: string
+        required: false
+      - name: completed_at
+        type: datetime
+        required: false
+
+  - name: OrderStatus
+    kind: enum
+    values:
+      - name: PENDING
+        value: "pending"
+      - name: VALIDATED
+        value: "validated"
+      - name: PAYMENT_CAPTURED
+        value: "payment_captured"
+      - name: INVENTORY_RESERVED
+        value: "inventory_reserved"
+      - name: SHIPPED
+        value: "shipped"
+      - name: COMPLETED
+        value: "completed"
+      - name: CANCELLED
+        value: "cancelled"
+      - name: FAILED
+        value: "failed"
+
+  - name: PaymentResult
+    kind: struct
+    fields:
+      - name: transaction_id
+        type: string
+        required: true
+      - name: captured
+        type: bool
+        required: true
+
+  - name: ShipmentResult
+    kind: struct
+    fields:
+      - name: tracking_number
+        type: string
+        required: true
+      - name: carrier
+        type: string
+        required: true
+      - name: estimated_delivery
+        type: datetime
+        required: false
+
+  - name: NotificationPayload
+    kind: struct
+    fields:
+      - name: recipient_id
+        type: string
+        required: true
+      - name: template
+        type: string
+        required: true
+      - name: context
+        type: "map<string, string>"
+        required: false
+
+  - name: CancelOrderInput
+    kind: struct
+    fields:
+      - name: reason
+        type: string
+        required: true
+      - name: requested_by
+        type: string
+        required: true
+
+  - name: OrderStatusQuery
+    kind: alias
+    alias_of: string
+
+  - name: BulkOrderInput
+    kind: struct
+    fields:
+      - name: orders
+        type: "list<OrderInput>"
+        required: true
+      - name: priority
+        type: string
+        required: false
+        default: "normal"
+        constraints:
+          one_of: ["low", "normal", "high"]
+
+# ---------------------------------------------------------------------------
+# RETRY POLICIES
+# ---------------------------------------------------------------------------
+retry_policies:
+  - name: standard
+    initial_interval: "1s"
+    backoff_coefficient: 2.0
+    max_interval: "30s"
+    max_attempts: 5
+
+  - name: payment-critical
+    initial_interval: "2s"
+    backoff_coefficient: 1.5
+    max_interval: "10s"
+    max_attempts: 3
+    non_retryable_error_types:
+      - "InsufficientFundsError"
+      - "CardDeclinedError"
+      - "FraudDetectedError"
+
+  - name: notification-best-effort
+    initial_interval: "5s"
+    backoff_coefficient: 2.0
+    max_interval: "60s"
+    max_attempts: 10
+
+# ---------------------------------------------------------------------------
+# ACTIVITIES
+# ---------------------------------------------------------------------------
+activities:
+  # ---- Synchronous Activities ----
+  - name: validate_order
+    description: "Validates order data, checks SKU catalog, verifies pricing."
+    mode: sync
+    input:
+      type: OrderInput
+      description: "The raw order to validate"
+    output:
+      type: OrderInput
+      description: "Validated & enriched order (prices confirmed)"
+    start_to_close_timeout: "10s"
+    retry_policy: standard
+
+  - name: reserve_inventory
+    description: "Reserves stock for each line item. Idempotent by order_id."
+    mode: sync
+    input:
+      type: OrderInput
+    output:
+      type: bool
+    start_to_close_timeout: "15s"
+    retry_policy: standard
+    idempotency_key: "{{input.order_id}}"
+
+  - name: release_inventory
+    description: "Compensation: releases previously reserved stock."
+    mode: sync
+    input:
+      type: OrderInput
+    output:
+      type: bool
+    start_to_close_timeout: "15s"
+    retry_policy: standard
+
+  - name: send_notification
+    description: "Sends email / push / SMS via notification service."
+    mode: sync
+    input:
+      type: NotificationPayload
+    output:
+      type: bool
+    start_to_close_timeout: "30s"
+    retry_policy: notification-best-effort
+    task_queue: "notifications"
+
+  # ---- Asynchronous Activities ----
+  - name: capture_payment
+    description: >
+      Initiates payment capture with the payment gateway.
+      Heartbeats while waiting for processor callback.
+      May complete asynchronously via completion token.
+    mode: async
+    input:
+      type: OrderInput
+    output:
+      type: PaymentResult
+    schedule_to_close_timeout: "5m"
+    start_to_close_timeout: "3m"
+    heartbeat_timeout: "30s"
+    retry_policy: payment-critical
+    idempotency_key: "{{input.order_id}}-payment"
+    annotations:
+      gateway: "stripe"
+
+  - name: refund_payment
+    description: "Compensation: issues refund for a captured payment."
+    mode: async
+    input:
+      type: PaymentResult
+    output:
+      type: bool
+    schedule_to_close_timeout: "5m"
+    heartbeat_timeout: "30s"
+    retry_policy: payment-critical
+
+  - name: fulfill_order
+    description: >
+      Hands order to warehouse management system.
+      Heartbeats as pick/pack/ship progresses.
+    mode: async
+    input:
+      type: OrderInput
+    output:
+      type: ShipmentResult
+    schedule_to_close_timeout: "24h"
+    start_to_close_timeout: "23h"
+    heartbeat_timeout: "5m"
+    retry_policy: standard
+    task_queue: "fulfillment"
+
+# ---------------------------------------------------------------------------
+# SIGNALS
+# ---------------------------------------------------------------------------
+signals:
+  - name: cancel_order
+    description: "Request cancellation of an in-flight order."
+    payload:
+      type: CancelOrderInput
+
+  - name: update_shipping_address
+    description: "Update the shipping address before fulfillment begins."
+    payload:
+      type: Address
+
+# ---------------------------------------------------------------------------
+# QUERIES
+# ---------------------------------------------------------------------------
+queries:
+  - name: get_order_status
+    description: "Returns the current status of the order workflow."
+    input:
+      type: "null"
+    output:
+      type: OrderStatus
+
+  - name: get_order_details
+    description: "Returns the full order snapshot including enriched data."
+    input:
+      type: "null"
+    output:
+      type: OrderResult
+
+# ---------------------------------------------------------------------------
+# UPDATES
+# ---------------------------------------------------------------------------
+updates:
+  - name: apply_discount
+    description: "Apply a discount code to the order before payment capture."
+    input:
+      type: string
+    output:
+      type: Money
+    has_validator: true
+
+# ---------------------------------------------------------------------------
+# WORKFLOWS
+# ---------------------------------------------------------------------------
+workflows:
+  # ---- Primary Order Workflow (async — caller gets handle) ----
+  - name: ProcessOrder
+    description: "End-to-end order processing with saga-style compensation."
+    mode: async
+    id_pattern: "order-{{input.order_id}}"
+    id_reuse_policy: reject_duplicate
+    input:
+      type: OrderInput
+    output:
+      type: OrderResult
+    execution_timeout: "48h"
+    run_timeout: "25h"
+    task_timeout: "10s"
+    retry_policy: standard
+    search_attributes:
+      - name: CustomerId
+        type: keyword
+        expression: "{{input.customer_id}}"
+      - name: OrderTotal
+        type: int
+        expression: "{{input.total.amount}}"
+
+    steps:
+      # 1. Validate
+      - id: validate
+        kind: activity
+        activity: validate_order
+        input_mapping: "{{workflow.input}}"
+        output_var: validated_order
+
+      # 2. Reserve inventory
+      - id: reserve
+        kind: activity
+        activity: reserve_inventory
+        input_mapping: "{{validated_order}}"
+        output_var: inventory_reserved
+        depends_on: [validate]
+        on_error:
+          strategy: fail
+
+      # 3. Capture payment (async — heartbeats)
+      - id: payment
+        kind: activity
+        activity: capture_payment
+        input_mapping: "{{validated_order}}"
+        output_var: payment_result
+        depends_on: [reserve]
+        on_error:
+          strategy: fallback
+          fallback_step: compensate_inventory
+
+      # 4. Fulfill (async — long-running, heartbeats)
+      - id: fulfill
+        kind: activity
+        activity: fulfill_order
+        input_mapping: "{{validated_order}}"
+        output_var: shipment
+        depends_on: [payment]
+        on_error:
+          strategy: fallback
+          fallback_step: compensate_payment
+
+      # 5. Notify customer
+      - id: notify_shipped
+        kind: activity
+        activity: send_notification
+        input_mapping: |
+          {
+            "recipient_id": "{{validated_order.customer_id}}",
+            "template": "order_shipped",
+            "context": {
+              "tracking": "{{shipment.tracking_number}}",
+              "carrier": "{{shipment.carrier}}"
+            }
+          }
+        depends_on: [fulfill]
+        on_error:
+          strategy: skip
+
+      # ---- Compensation steps (only reached via on_error fallback) ----
+      - id: compensate_inventory
+        kind: activity
+        activity: release_inventory
+        input_mapping: "{{validated_order}}"
+
+      - id: compensate_payment
+        kind: activity
+        activity: refund_payment
+        input_mapping: "{{payment_result}}"
+        depends_on: [compensate_inventory]
+
+    signal_handlers:
+      - signal: cancel_order
+        steps: [compensate_payment]
+      - signal: update_shipping_address
+        steps: []
+
+    query_handlers:
+      - query: get_order_status
+        expression: "{{current_status}}"
+      - query: get_order_details
+        expression: "{{order_snapshot}}"
+
+    update_handlers:
+      - update: apply_discount
+        validator_expression: "{{current_status}} == 'validated'"
+        steps: []
+
+  # ---- Synchronous lookup workflow ----
+  - name: GetOrderStatus
+    description: "Lightweight sync workflow that returns order state."
+    mode: sync
+    id_pattern: "status-{{input}}"
+    id_reuse_policy: allow_duplicate
+    input:
+      type: string
+      description: "order_id"
+    output:
+      type: OrderResult
+    execution_timeout: "30s"
+    steps:
+      - id: lookup
+        kind: local_activity
+        local_activity_fn: "lookup_order_in_db"
+        input_mapping: "{{workflow.input}}"
+        output_var: result
+
+  # ---- Cron: stale-order cleanup ----
+  - name: CleanupStaleOrders
+    description: "Runs daily to cancel orders stuck in pending > 24h."
+    mode: cron
+    cron_schedule: "0 3 * * *"
+    id_pattern: "cleanup-stale-orders"
+    id_reuse_policy: allow_duplicate
+    input:
+      type: "null"
+    output:
+      type: int
+      description: "Number of orders cancelled"
+    execution_timeout: "1h"
+    steps:
+      - id: find_stale
+        kind: local_activity
+        local_activity_fn: "query_stale_orders"
+        output_var: stale_order_ids
+
+      - id: cancel_all
+        kind: parallel
+        depends_on: [find_stale]
+        branches:
+          - steps: [cancel_one]
+        completion_strategy: wait_all
+
+      - id: cancel_one
+        kind: child_workflow
+        workflow: ProcessOrder
+        child_input_mapping: "{{item}}"
+        parent_close_policy: terminate
+
+# ---------------------------------------------------------------------------
+# PIPELINES
+# ---------------------------------------------------------------------------
+pipelines:
+  - name: BulkOrderIngestion
+    description: >
+      Accepts a batch of orders (e.g. from a CSV upload or partner API),
+      validates them in parallel, then processes each via the ProcessOrder
+      workflow with bounded concurrency.
+    trigger:
+      kind: webhook
+      webhook_path: "/api/v1/orders/bulk"
+    input:
+      type: BulkOrderInput
+    output:
+      type: "list<OrderResult>"
+    timeout: "12h"
+
+    stages:
+      - id: validate_batch
+        description: "Fan-out validation across all orders"
+        execution: fan_out_fan_in
+        workflows:
+          - workflow: GetOrderStatus
+            input_mapping: "{{item.order_id}}"
+            fan_out_over: "{{input.orders}}"
+            max_concurrency: 20
+        on_error:
+          strategy: skip_stage
+          dead_letter_queue: "failed-validations"
+
+      - id: process_orders
+        description: "Process each validated order"
+        execution: fan_out_fan_in
+        depends_on: [validate_batch]
+        workflows:
+          - workflow: ProcessOrder
+            input_mapping: "{{item}}"
+            output_var: order_result
+            fan_out_over: "{{stages.validate_batch.results}}"
+            max_concurrency: 50
+        on_error:
+          strategy: abort_pipeline
+
+    compensation:
+      - stage: process_orders
+        workflow: ProcessOrder
+        input_mapping: "{{item}}"
+
+# ---------------------------------------------------------------------------
+# WORKERS
+# ---------------------------------------------------------------------------
+workers:
+  - name: order-worker
+    description: "Handles core order workflows and sync activities."
+    task_queue: "order-processing"
+    activities:
+      - validate_order
+      - reserve_inventory
+      - release_inventory
+    workflows:
+      - ProcessOrder
+      - GetOrderStatus
+      - CleanupStaleOrders
+    max_concurrent_activities: 100
+    max_concurrent_workflow_tasks: 200
+    max_concurrent_local_activities: 50
+    graceful_shutdown_timeout: "30s"
+    interceptors:
+      - name: opentelemetry
+        config:
+          service_name: "order-worker"
+    runtime:
+      replicas: 3
+      cpu: "1"
+      memory: "1Gi"
+      env:
+        DB_URL: "${ORDER_DB_URL}"
+        LOG_LEVEL: "info"
+
+  - name: payment-worker
+    description: "Handles async payment activities with heartbeating."
+    task_queue: "order-processing"
+    activities:
+      - capture_payment
+      - refund_payment
+    max_concurrent_activities: 50
+    max_activities_per_second: 20.0
+    graceful_shutdown_timeout: "60s"
+    interceptors:
+      - name: opentelemetry
+        config:
+          service_name: "payment-worker"
+      - name: datadog
+        config:
+          env: "production"
+    runtime:
+      replicas: 2
+      cpu: "500m"
+      memory: "512Mi"
+      env:
+        STRIPE_API_KEY: "${STRIPE_API_KEY}"
+
+  - name: fulfillment-worker
+    description: "Handles long-running warehouse fulfillment activities."
+    task_queue: "fulfillment"
+    activities:
+      - fulfill_order
+    max_concurrent_activities: 25
+    graceful_shutdown_timeout: "120s"
+    runtime:
+      replicas: 2
+      cpu: "500m"
+      memory: "512Mi"
+      env:
+        WMS_ENDPOINT: "${WMS_ENDPOINT}"
+
+  - name: notification-worker
+    description: "Best-effort notification delivery."
+    task_queue: "notifications"
+    activities:
+      - send_notification
+    max_concurrent_activities: 200
+    max_activities_per_second: 100.0
+    runtime:
+      replicas: 1
+      cpu: "250m"
+      memory: "256Mi"
+
+# ---------------------------------------------------------------------------
+# CLIENTS
+# ---------------------------------------------------------------------------
+clients:
+  - name: order-api-client
+    description: >
+      Used by the REST API gateway to start and query order workflows.
+      Generates typed stubs for all allowed workflows/signals/queries.
+    namespace: "orders-prod"
+    target: "temporal.internal:7233"
+    tls:
+      enabled: true
+      cert_path: "/etc/temporal/certs/client.pem"
+      key_path: "/etc/temporal/certs/client.key"
+      ca_path: "/etc/temporal/certs/ca.pem"
+    allowed_workflows:
+      - ProcessOrder
+      - GetOrderStatus
+    allowed_signals:
+      - cancel_order
+      - update_shipping_address
+    allowed_queries:
+      - get_order_status
+      - get_order_details
+    allowed_updates:
+      - apply_discount
+    default_mode: async
+    rpc_timeout: "10s"
+    data_converter:
+      encoding: json
+      encryption:
+        enabled: true
+        key_id: "orders-key-v2"
+      compression:
+        enabled: true
+        algorithm: zstd
+    interceptors:
+      - name: opentelemetry
+        config:
+          service_name: "order-api"
+
+  - name: internal-admin-client
+    description: >
+      Used by internal admin tools and the cron scheduler.
+      Has access to all workflows.
+    namespace: "orders-prod"
+    target: "temporal.internal:7233"
+    tls:
+      enabled: true
+      cert_path: "/etc/temporal/certs/admin.pem"
+      key_path: "/etc/temporal/certs/admin.key"
+      ca_path: "/etc/temporal/certs/ca.pem"
+    allowed_workflows:
+      - ProcessOrder
+      - GetOrderStatus
+      - CleanupStaleOrders
+    allowed_signals:
+      - cancel_order
+    allowed_queries:
+      - get_order_status
+      - get_order_details
+    default_mode: sync
+    rpc_timeout: "30s"
+    data_converter:
+      encoding: json
+
+# ---------------------------------------------------------------------------
+# OBSERVABILITY
+# ---------------------------------------------------------------------------
+observability:
+  metrics:
+    enabled: true
+    exporter: prometheus
+    endpoint: ":9090"
+    prefix: "orders_temporal"
+    tags:
+      service: "order-processing"
+      env: "production"
+  tracing:
+    enabled: true
+    exporter: otlp
+    endpoint: "otel-collector.internal:4317"
+    sample_rate: 0.1
+  logging:
+    level: info
+    format: json
+    output: stdout

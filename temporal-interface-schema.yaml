@@ -1,0 +1,473 @@
+# ============================================================================
+# Temporal Interface Definition Schema (TIDS)
+# Version: 1.0.0
+#
+# A declarative schema for defining Temporal.io workers, clients, activities,
+# workflows, and pipelines. Designed to be consumed by code generators that
+# produce fully-typed Temporal worker and client implementations.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+#  Top-level keys
+# ---------------------------------------------------------------------------
+# schema_version   (required)  Semver of this schema format
+# metadata         (required)  Project-level identifiers and defaults
+# types            (optional)  Reusable type aliases & complex types
+# retry_policies   (optional)  Named retry-policy presets
+# activities       (required)  Activity definitions (sync / async)
+# workflows        (required)  Workflow definitions
+# signals          (optional)  Signal definitions reusable across workflows
+# queries          (optional)  Query definitions reusable across workflows
+# updates          (optional)  Update definitions (Temporal update handlers)
+# pipelines        (optional)  Multi-workflow orchestration graphs
+# workers          (required)  Worker process configurations
+# clients          (required)  Client configurations for workflow invocation
+# observability    (optional)  Metrics, tracing, and logging knobs
+# ============================================================================
+
+schema_version: "1.0.0"
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  # Human-readable project name
+  name: string                          # required
+  description: string                   # optional
+  # Target language(s) for code generation
+  language:                             # required — at least one
+    - enum: [python, typescript, go, java, rust, csharp]
+  # Default Temporal namespace (overridable per-worker / per-client)
+  namespace: string                     # required
+  # Default task queue (overridable per-workflow / per-worker)
+  default_task_queue: string            # required
+  # Arbitrary key-value pairs passed through to generated code
+  labels:                               # optional
+    map<string, string>
+
+# ============================================================================
+# TYPES  —  reusable type definitions & aliases
+# ============================================================================
+types:
+  - name: string                        # required — PascalCase identifier
+    description: string                 # optional
+    # "alias" makes this a simple rename; "struct" defines fields
+    kind: enum [alias, struct, enum]    # required
+    # --- alias ---
+    alias_of: string                    # type expression  e.g. "list<string>"
+    # --- struct ---
+    fields:
+      - name: string                    # required
+        type: string                    # required — type expression
+        required: bool                  # default true
+        default: any                    # optional literal default
+        description: string             # optional
+        constraints:                    # optional validation hints
+          min: number
+          max: number
+          pattern: string               # regex
+          one_of: [any]
+    # --- enum ---
+    values:
+      - name: string                    # UPPER_SNAKE variant name
+        value: string | int             # wire value
+        description: string
+
+# ============================================================================
+# RETRY POLICIES  —  named presets referenced by activities / workflows
+# ============================================================================
+retry_policies:
+  - name: string                        # required — kebab-case identifier
+    initial_interval: duration          # e.g. "1s", "500ms"
+    backoff_coefficient: float          # default 2.0
+    max_interval: duration              # ceiling between retries
+    max_attempts: int                   # 0 = unlimited
+    non_retryable_error_types:          # list of error type strings
+      - string
+
+# ============================================================================
+# ACTIVITIES
+# ============================================================================
+activities:
+  - name: string                        # required — snake_case
+    description: string                 # optional
+    # Execution model understood by the generator
+    mode: enum [sync, async]            # required
+    #   sync  — normal blocking activity
+    #   async — activity that heartbeats & may complete asynchronously
+    #           (generator will wire heartbeat details & async completion token)
+
+    # I/O contract
+    input:
+      type: string                      # type expression or reference to `types`
+      description: string
+    output:
+      type: string
+      description: string
+
+    # Timeout / retry knobs
+    schedule_to_close_timeout: duration # overall deadline
+    start_to_close_timeout: duration    # time after worker picks it up
+    schedule_to_start_timeout: duration # time waiting in task queue
+    heartbeat_timeout: duration         # only meaningful when mode=async
+    retry_policy: string                # name of a retry_policies entry
+    retry_policy_inline:                # or define inline (same shape)
+      initial_interval: duration
+      backoff_coefficient: float
+      max_interval: duration
+      max_attempts: int
+      non_retryable_error_types: [string]
+
+    # Optional: pin to a specific task queue (overrides default)
+    task_queue: string
+
+    # Idempotency key expression (template referencing input fields)
+    idempotency_key: string             # e.g. "{{input.order_id}}"
+
+    # Arbitrary generator hints
+    annotations:
+      map<string, any>
+
+# ============================================================================
+# WORKFLOWS
+# ============================================================================
+workflows:
+  - name: string                        # required — PascalCase
+    description: string
+    # Execution model
+    mode: enum [sync, async, cron]      # required
+    #   sync   — caller blocks until workflow completes
+    #   async  — fire-and-forget; caller gets a workflow handle
+    #   cron   — scheduled workflow (requires cron_schedule)
+
+    cron_schedule: string               # cron expression, only when mode=cron
+
+    id_pattern: string                  # workflow ID template
+                                        # e.g. "order-{{input.order_id}}"
+    id_reuse_policy: enum [              # Temporal WorkflowIdReusePolicy
+      allow_duplicate,
+      allow_duplicate_failed_only,
+      reject_duplicate,
+      terminate_if_running
+    ]
+
+    # I/O contract
+    input:
+      type: string
+      description: string
+    output:
+      type: string
+      description: string
+
+    # Timeouts
+    execution_timeout: duration         # overall workflow execution
+    run_timeout: duration               # single run (before continue-as-new)
+    task_timeout: duration              # workflow task timeout
+
+    retry_policy: string
+
+    # Search attributes to upsert on start
+    search_attributes:
+      - name: string
+        type: enum [keyword, text, int, double, bool, datetime, keyword_list]
+        expression: string              # template → value
+
+    task_queue: string                  # override default
+
+    # ---- Steps / logic ----
+    # Declarative step graph executed inside the workflow.
+    # The code generator translates these into deterministic workflow code.
+    steps:
+      - id: string                      # unique within workflow
+        description: string
+        kind: enum [
+          activity,           # invoke an activity
+          child_workflow,     # invoke a child workflow
+          local_activity,     # short-lived in-process activity
+          side_effect,        # non-deterministic helper (UUID, random, etc.)
+          timer,              # durable sleep
+          condition,          # branch
+          parallel,           # fan-out
+          signal_wait,        # block until signal received
+          update_handler,     # register an update handler
+          continue_as_new     # reset workflow history
+        ]
+
+        # --- activity / local_activity ---
+        activity: string                # name ref into `activities`
+        local_activity_fn: string       # inline function name
+        input_mapping: string           # expression mapping workflow input → activity input
+        output_var: string              # variable name for result
+
+        # --- child_workflow ---
+        workflow: string                # name ref into `workflows`
+        child_input_mapping: string
+        child_id_pattern: string
+        parent_close_policy: enum [terminate, request_cancel, abandon]
+        output_var: string
+
+        # --- timer ---
+        duration: duration
+
+        # --- condition ---
+        expression: string              # boolean expression over variables
+        then_steps: [string]            # step ids to execute when true
+        else_steps: [string]            # step ids to execute when false
+
+        # --- parallel ---
+        branches:
+          - steps: [string]             # list of step ids per branch
+        completion_strategy: enum [
+          wait_all,                     # wait for every branch
+          wait_any,                     # first completed branch wins
+          wait_n                        # complete after N branches
+        ]
+        completion_count: int           # used with wait_n
+
+        # --- signal_wait ---
+        signal: string                  # ref into `signals`
+        timeout: duration               # optional max wait
+        output_var: string
+
+        # --- continue_as_new ---
+        input_mapping: string
+
+        # Step-level error handling
+        on_error:
+          strategy: enum [retry, fail, fallback, skip]
+          fallback_step: string         # step id
+          max_retries: int
+          retry_delay: duration
+
+        # Execution order control
+        depends_on: [string]            # step ids that must complete first
+
+    # Inline signal handlers scoped to this workflow
+    signal_handlers:
+      - signal: string                  # ref to signals
+        steps: [string]                 # step ids to run on receipt
+
+    # Inline query handlers scoped to this workflow
+    query_handlers:
+      - query: string                   # ref to queries
+        expression: string              # expression returning query result
+
+    # Inline update handlers
+    update_handlers:
+      - update: string                  # ref to updates
+        validator_expression: string    # optional — reject if false
+        steps: [string]                 # steps to run
+
+    annotations:
+      map<string, any>
+
+# ============================================================================
+# SIGNALS
+# ============================================================================
+signals:
+  - name: string                        # required — snake_case
+    description: string
+    payload:
+      type: string
+      description: string
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+queries:
+  - name: string
+    description: string
+    input:
+      type: string
+      description: string
+    output:
+      type: string
+      description: string
+
+# ============================================================================
+# UPDATES  (Temporal Workflow Update)
+# ============================================================================
+updates:
+  - name: string
+    description: string
+    input:
+      type: string
+    output:
+      type: string
+    # If true, the generator produces a validator function stub
+    has_validator: bool
+
+# ============================================================================
+# PIPELINES  —  multi-workflow orchestration
+# ============================================================================
+pipelines:
+  - name: string                        # required — PascalCase
+    description: string
+    # The trigger that kicks off the pipeline
+    trigger:
+      kind: enum [manual, cron, signal, webhook, event]
+      cron_schedule: string             # when kind=cron
+      signal: string                    # when kind=signal
+      webhook_path: string              # when kind=webhook
+      event_type: string                # when kind=event
+
+    input:
+      type: string
+      description: string
+    output:
+      type: string
+      description: string
+
+    # Ordered stages; each stage is one or more workflows
+    stages:
+      - id: string
+        description: string
+        # Execution mode for this stage
+        execution: enum [sequential, parallel, fan_out_fan_in]
+
+        workflows:
+          - workflow: string            # ref to workflows
+            input_mapping: string       # expression
+            output_var: string
+            # For fan_out_fan_in: expression yielding a list
+            fan_out_over: string        # e.g. "{{input.items}}"
+            max_concurrency: int        # throttle parallel children
+
+        # Stage-level error handling
+        on_error:
+          strategy: enum [retry_stage, skip_stage, abort_pipeline, fallback]
+          fallback_stage: string
+          max_retries: int
+          retry_delay: duration
+          dead_letter_queue: string     # task queue for failed items
+
+        # Stage gating
+        depends_on: [string]            # stage ids
+        condition: string               # boolean expression; skip if false
+
+    # Pipeline-level timeout
+    timeout: duration
+
+    # Compensation / rollback stages executed in reverse on failure
+    compensation:
+      - stage: string                   # stage id to compensate
+        workflow: string                # compensating workflow
+        input_mapping: string
+
+    annotations:
+      map<string, any>
+
+# ============================================================================
+# WORKERS
+# ============================================================================
+workers:
+  - name: string                        # required — kebab-case process name
+    description: string
+    task_queue: string                  # required
+    namespace: string                   # override metadata.namespace
+
+    # Which activities & workflows this worker hosts
+    activities: [string]                # list of activity names
+    workflows: [string]                 # list of workflow names
+
+    # Concurrency tuning
+    max_concurrent_activities: int      # default 200
+    max_concurrent_workflow_tasks: int  # default 200
+    max_concurrent_local_activities: int
+
+    # Rate limiting
+    max_activities_per_second: float
+    max_task_queue_activities_per_second: float
+
+    # Sticky queue
+    sticky_queue_schedule_to_start_timeout: duration
+
+    # Graceful shutdown
+    graceful_shutdown_timeout: duration  # time to drain in-flight work
+
+    # Interceptors the generator should wire
+    interceptors:
+      - name: string                    # e.g. "opentelemetry", "datadog"
+        config:
+          map<string, any>
+
+    # Runtime / deployment hints
+    runtime:
+      replicas: int
+      cpu: string                       # e.g. "500m", "2"
+      memory: string                    # e.g. "512Mi", "2Gi"
+      env:
+        map<string, string>
+
+    annotations:
+      map<string, any>
+
+# ============================================================================
+# CLIENTS
+# ============================================================================
+clients:
+  - name: string                        # required — kebab-case
+    description: string
+    namespace: string
+    # Connection target
+    target: string                      # host:port  e.g. "localhost:7233"
+    tls:
+      enabled: bool
+      cert_path: string
+      key_path: string
+      ca_path: string
+      server_name: string
+
+    # Which workflows / signals / queries this client is allowed to use
+    # (acts as a generated-code allow-list for type-safe stubs)
+    allowed_workflows: [string]
+    allowed_signals: [string]
+    allowed_queries: [string]
+    allowed_updates: [string]
+
+    # Default invocation style
+    default_mode: enum [sync, async]    # sync waits for result; async returns handle
+
+    # Client-level timeout defaults
+    rpc_timeout: duration
+
+    # Data converter / codec
+    data_converter:
+      encoding: enum [json, protobuf, messagepack, custom]
+      encryption:
+        enabled: bool
+        key_id: string
+      compression:
+        enabled: bool
+        algorithm: enum [zstd, snappy, gzip]
+
+    # Interceptors
+    interceptors:
+      - name: string
+        config:
+          map<string, any>
+
+    annotations:
+      map<string, any>
+
+# ============================================================================
+# OBSERVABILITY
+# ============================================================================
+observability:
+  metrics:
+    enabled: bool
+    exporter: enum [prometheus, otlp, statsd, datadog]
+    endpoint: string
+    prefix: string                      # metric name prefix
+    tags:
+      map<string, string>
+  tracing:
+    enabled: bool
+    exporter: enum [otlp, jaeger, zipkin, datadog]
+    endpoint: string
+    sample_rate: float                  # 0.0–1.0
+  logging:
+    level: enum [debug, info, warn, error]
+    format: enum [json, text]
+    output: enum [stdout, stderr, file]
+    file_path: string
