@@ -116,6 +116,52 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
 }
 .sim-highlight { animation:simPulse 0.8s ease-in-out infinite; z-index:20!important; }
 
+/* Sim runner icon on SVG */
+@keyframes simRunnerPulse {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(232,89,12,0.6)); }
+  50% { filter: drop-shadow(0 0 10px rgba(232,89,12,0.9)); }
+}
+.sim-runner {
+  animation: simRunnerPulse 0.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Trash drop zone */
+#trashZone {
+  position:absolute; bottom:0; left:50%; translate:-50% 0;
+  width:180px; height:52px;
+  border-radius:16px 16px 0 0;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  font-size:12px; font-weight:600;
+  z-index:40;
+  opacity:0; pointer-events:none;
+  transition: opacity 0.2s, transform 0.2s, background 0.15s;
+  transform: translateY(20px);
+  background: var(--c-surface);
+  border: 2px dashed var(--c-border);
+  color: var(--c-text3);
+}
+#trashZone.visible {
+  opacity:1; pointer-events:auto;
+  transform: translateY(0);
+}
+#trashZone.over {
+  background: rgba(225,29,72,0.12);
+  border-color: var(--c-rose);
+  color: var(--c-rose);
+  transform: translateY(0) scale(1.05);
+}
+
+/* Node delete button - larger trash icon */
+.node-del-btn {
+  width:22px; height:22px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition: opacity 0.15s, background 0.12s;
+  cursor:pointer;
+}
+.flow-node:hover .node-del-btn { opacity:0.5; }
+.node-del-btn:hover { opacity:1!important; background:rgba(225,29,72,0.1); }
+
 /* Badges */
 .type-badge {
   display:inline-block; font-size:10px; line-height:1; padding:2px 6px;
@@ -169,6 +215,11 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
         <option value="python">Python</option><option value="typescript">TypeScript</option>
         <option value="go">Go</option><option value="java">Java</option>
       </select>
+      <button onclick="openTypesManager()" title="Define Types" class="h-8 px-3 rounded-md text-xs font-semibold flex items-center gap-1.5 border hover:opacity-80 transition"
+        style="border-color:var(--c-accent);color:var(--c-accent)">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+        Types <span id="typeCount" class="text-[10px] font-mono px-1 rounded" style="background:var(--c-surface2)">0</span>
+      </button>
       <div class="w-px h-5 mx-1" style="background:var(--c-border)"></div>
       <button onclick="doExport()" title="Export YAML" class="h-8 px-3 rounded-md text-xs font-semibold text-white flex items-center gap-1.5 hover:opacity-90 transition"
         style="background:var(--c-accent)">
@@ -225,10 +276,11 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
       <!-- Sim bar -->
       <div id="simBar" class="hidden absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg border shadow-lg flex items-center gap-3 text-xs font-medium"
         style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text);z-index:50;">
-        <span class="w-2 h-2 rounded-full animate-pulse" style="background:var(--c-green)"></span>
-        Simulating…
-        <span id="simStep" style="color:var(--c-text3)">0/0</span>
-        <button onclick="stopSim()" class="ml-1 px-2 py-0.5 rounded text-[11px]" style="color:var(--c-rose)">Stop</button>
+        <span class="text-base">⚡</span>
+        <span>Simulating</span>
+        <span id="simStep" class="font-mono px-1.5 py-0.5 rounded" style="background:var(--c-surface2);color:var(--c-accent)">0/0</span>
+        <span id="simNodeName" class="max-w-[140px] truncate" style="color:var(--c-text2)"></span>
+        <button onclick="stopSim()" class="ml-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition hover:opacity-80" style="border-color:var(--c-rose);color:var(--c-rose)">Stop</button>
       </div>
 
       <!-- Zoom -->
@@ -246,6 +298,12 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
         <p class="text-sm font-medium opacity-40">Drag activities from the palette to build your flow</p>
         <p class="text-xs mt-1 opacity-30">Connect nodes by dragging between their ports</p>
+      </div>
+
+      <!-- Trash drop zone (appears when dragging a node) -->
+      <div id="trashZone">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Drop to delete
       </div>
     </main>
 
@@ -316,9 +374,11 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
         <textarea id="cDesc" rows="2" class="w-full px-2.5 py-2 rounded-md border focus:outline-none resize-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)" placeholder="What does it do?"></textarea></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block font-medium mb-1" style="color:var(--c-text)">Input Type</label>
-          <input id="cIn" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)" value="any"/></div>
+          <div class="flex gap-1"><select id="cIn" class="flex-1 px-2.5 py-2 rounded-md border font-mono text-xs focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"><option value="any">any</option></select>
+          <button onclick="promptCustomTypeName('cIn')" class="px-1.5 py-1 rounded-md border text-[10px] hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text3)" title="Custom">✎</button></div></div>
         <div><label class="block font-medium mb-1" style="color:var(--c-text)">Output Type</label>
-          <input id="cOut" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)" value="any"/></div>
+          <div class="flex gap-1"><select id="cOut" class="flex-1 px-2.5 py-2 rounded-md border font-mono text-xs focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"><option value="any">any</option></select>
+          <button onclick="promptCustomTypeName('cOut')" class="px-1.5 py-1 rounded-md border text-[10px] hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text3)" title="Custom">✎</button></div></div>
       </div>
       <div><label class="block font-medium mb-1" style="color:var(--c-text)">Icon</label>
         <div id="cIcons" class="flex flex-wrap gap-1.5"></div>
@@ -332,6 +392,47 @@ body { font-family:'Outfit',sans-serif; background:var(--c-bg); color:var(--c-te
     <div class="flex justify-end gap-2 px-5 py-3 border-t" style="border-color:var(--c-border)">
       <button onclick="$('customModal').classList.add('hidden')" class="px-4 py-2 rounded-md text-xs border hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text)">Cancel</button>
       <button onclick="saveCustom()" class="px-4 py-2 rounded-md text-xs font-semibold text-white hover:opacity-90" style="background:var(--c-accent)">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== TYPES MANAGER MODAL ====================== -->
+<div id="typesModal" class="modal-bg hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="rounded-xl border shadow-2xl w-[780px] max-h-[88vh] flex flex-col overflow-hidden"
+    style="background:var(--c-surface);border-color:var(--c-border)">
+    <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:var(--c-border)">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold" style="color:var(--c-text)">Type Definitions</span>
+        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded" style="background:var(--c-surface2);color:var(--c-text3)">TIDS types</span>
+      </div>
+      <button onclick="$('typesModal').classList.add('hidden')" class="w-7 h-7 rounded flex items-center justify-center hover:opacity-60" style="color:var(--c-text3)">✕</button>
+    </div>
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Left: Type list -->
+      <div class="w-56 flex-shrink-0 border-r flex flex-col" style="border-color:var(--c-border)">
+        <div class="p-3">
+          <button onclick="addNewType()" class="w-full py-2 border-2 border-dashed rounded-lg text-xs hover:opacity-80 transition"
+            style="border-color:var(--c-accent);color:var(--c-accent)">+ New Type</button>
+        </div>
+        <!-- Base types (read-only) -->
+        <div class="px-3 pb-1">
+          <div class="text-[10px] font-semibold uppercase tracking-widest mb-1.5" style="color:var(--c-text3)">Base Types</div>
+          <div id="baseTypesList" class="space-y-0.5"></div>
+        </div>
+        <div class="mx-3 my-2 border-t" style="border-color:var(--c-border)"></div>
+        <!-- Custom types -->
+        <div class="px-3 pb-1 flex-1 overflow-y-auto">
+          <div class="text-[10px] font-semibold uppercase tracking-widest mb-1.5" style="color:var(--c-text3)">Custom Types</div>
+          <div id="customTypesList" class="space-y-0.5"></div>
+        </div>
+      </div>
+      <!-- Right: Type editor -->
+      <div id="typeEditorPanel" class="flex-1 overflow-y-auto p-5 text-xs" style="color:var(--c-text2)">
+        <div class="flex flex-col items-center justify-center h-full opacity-30">
+          <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+          <p class="text-sm">Select or create a type to edit</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -515,6 +616,10 @@ function init() {
   // State
   const saved = LS.get('state');
   if (saved && saved.nodes) { S = saved; }
+  // Types
+  try { const t = LS.get('types'); if(t) S.types = t; } catch(e){}
+  if (!S.types) S.types = [];
+  updateTypeCount();
   // Render
   renderPalette();
   rebuildCanvas();
@@ -658,8 +763,8 @@ function renderNode(n) {
       <button onclick="event.stopPropagation();openEdit('${n.id}')" class="w-5 h-5 rounded flex items-center justify-center opacity-40 hover:opacity-100 transition" style="color:${cTxt(n.color)}" title="Edit">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
       </button>
-      <button onclick="event.stopPropagation();removeNode('${n.id}')" class="w-5 h-5 rounded flex items-center justify-center opacity-40 hover:opacity-100 transition" style="color:var(--c-rose)" title="Delete">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      <button onclick="event.stopPropagation();removeNode('${n.id}')" class="node-del-btn" style="color:var(--c-rose)" title="Delete node">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
       </button>
     </div>`;
 
@@ -721,6 +826,13 @@ function onCanvasMove(e) {
     const el = $('nd_'+n.id);
     if (el) { el.style.left = n.x+'px'; el.style.top = n.y+'px'; }
     drawEdges();
+    // Show trash zone
+    const tz = $('trashZone');
+    tz.classList.add('visible');
+    // Check if hovering over trash
+    const tzRect = tz.getBoundingClientRect();
+    const over = e.clientX >= tzRect.left && e.clientX <= tzRect.right && e.clientY >= tzRect.top && e.clientY <= tzRect.bottom;
+    tz.classList.toggle('over', over);
     return;
   }
   // Draw temp connection line
@@ -739,7 +851,19 @@ function onCanvasMove(e) {
 }
 
 function onCanvasUp(e) {
-  if (dragNode) { dragNode=null; persist(); return; }
+  if (dragNode) {
+    // Check if dropped on trash zone
+    const tz = $('trashZone');
+    const tzRect = tz.getBoundingClientRect();
+    const overTrash = e.clientX >= tzRect.left && e.clientX <= tzRect.right && e.clientY >= tzRect.top && e.clientY <= tzRect.bottom;
+    tz.classList.remove('visible','over');
+    if (overTrash) {
+      removeNode(dragNode);
+      dragNode = null;
+      return;
+    }
+    dragNode=null; persist(); return;
+  }
   if (linking && tempPath) {
     const tgt = document.elementFromPoint(e.clientX, e.clientY);
     if (tgt && tgt.classList.contains('port')) {
@@ -845,8 +969,8 @@ function renderProps(id) {
       ${field('Name','text',n.name,v=>{n.name=v;persist();refreshNode(n);})}
       ${field('Description','textarea',n.desc,v=>{n.desc=v;persist();refreshNode(n);})}
       <div class="grid grid-cols-2 gap-2">
-        ${field('Input Type','text',n.inT,v=>{n.inT=v;persist();refreshNode(n);})}
-        ${field('Output Type','text',n.outT,v=>{n.outT=v;persist();refreshNode(n);})}
+        ${typeSelect('Input Type',n.inT,v=>{n.inT=v;persist();refreshNode(n);})}
+        ${typeSelect('Output Type',n.outT,v=>{n.outT=v;persist();refreshNode(n);})}
       </div>
       ${select('Mode',['sync','async','cron'],n.cfg.mode,v=>{n.cfg.mode=v;persist();})}
       ${field('Timeout',  'text',n.cfg.timeout,v=>{n.cfg.timeout=v;persist();})}
@@ -879,9 +1003,46 @@ function select(label,opts,value,onChange) {
   return `<div><label class="block font-medium mb-1" style="color:var(--c-text)">${label}</label><select id="${uid}" class="w-full px-2.5 py-1.5 rounded-md border focus:outline-none text-xs" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${opts.map(o=>`<option value="${o}"${o===value?' selected':''}>${o}</option>`).join('')}</select></div>`;
 }
 
+function typeSelect(label,value,onChange) {
+  const uid = 'f'+Math.random().toString(36).slice(2,8);
+  setTimeout(()=>{
+    const el = $(uid);
+    if (el) el.addEventListener('change', e=>onChange(e.target.value));
+  },0);
+  // Build options from base + custom types, allow freeform via datalist
+  const allNames = getAllTypeNames();
+  const isKnown = allNames.includes(value);
+  let opts = getTypeSelectOptions(value);
+  if (!isKnown && value) {
+    opts = `<option value="${value}" selected>${value}</option>` + opts;
+  }
+  return `<div><label class="block font-medium mb-1" style="color:var(--c-text)">${label}</label>
+    <div class="flex gap-1">
+      <select id="${uid}" class="flex-1 px-2.5 py-1.5 rounded-md border focus:outline-none text-xs font-mono" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${opts}</select>
+      <button onclick="promptCustomTypeName('${uid}')" class="px-1.5 py-1 rounded-md border text-[10px] hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text3)" title="Enter custom type name">✎</button>
+    </div></div>`;
+}
+
 function refreshNode(n) {
   const el = $('nd_'+n.id);
   if (el) { el.remove(); renderNode(n); }
+}
+
+function promptCustomTypeName(selId) {
+  const v = prompt('Enter a type name (PascalCase):');
+  if (!v) return;
+  const sel = $(selId);
+  if (!sel) return;
+  // Add option if not exists
+  let found = false;
+  for (const opt of sel.options) { if(opt.value===v) { found=true; break; } }
+  if (!found) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.text = v;
+    sel.appendChild(opt);
+  }
+  sel.value = v;
+  sel.dispatchEvent(new Event('change'));
 }
 
 // ========================================================================
@@ -912,8 +1073,12 @@ function openEdit(id) {
     <div><label class="block font-medium mb-1" style="color:var(--c-text)">Name</label><input id="ed_name" value="${n.name}" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"/></div>
     <div><label class="block font-medium mb-1" style="color:var(--c-text)">Description</label><textarea id="ed_desc" rows="2" class="w-full px-2.5 py-2 rounded-md border focus:outline-none resize-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${n.desc||''}</textarea></div>
     <div class="grid grid-cols-2 gap-3">
-      <div><label class="block font-medium mb-1" style="color:var(--c-text)">Input Type</label><input id="ed_inT" value="${n.inT}" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"/></div>
-      <div><label class="block font-medium mb-1" style="color:var(--c-text)">Output Type</label><input id="ed_outT" value="${n.outT}" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"/></div>
+      <div><label class="block font-medium mb-1" style="color:var(--c-text)">Input Type</label>
+        <div class="flex gap-1"><select id="ed_inT" class="flex-1 px-2.5 py-2 rounded-md border font-mono text-xs focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${getTypeSelectOptions(n.inT)}</select>
+        <button onclick="promptCustomTypeName('ed_inT')" class="px-1.5 py-1 rounded-md border text-[10px] hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text3)" title="Custom type">✎</button></div></div>
+      <div><label class="block font-medium mb-1" style="color:var(--c-text)">Output Type</label>
+        <div class="flex gap-1"><select id="ed_outT" class="flex-1 px-2.5 py-2 rounded-md border font-mono text-xs focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${getTypeSelectOptions(n.outT)}</select>
+        <button onclick="promptCustomTypeName('ed_outT')" class="px-1.5 py-1 rounded-md border text-[10px] hover:opacity-70" style="border-color:var(--c-border);color:var(--c-text3)" title="Custom type">✎</button></div></div>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <div><label class="block font-medium mb-1" style="color:var(--c-text)">Mode</label>
@@ -969,7 +1134,10 @@ function saveEdit() {
 //  CUSTOM ACTIVITY MODAL
 // ========================================================================
 function openCustomModal() {
-  $('cName').value=''; $('cDesc').value=''; $('cIn').value='any'; $('cOut').value='any';
+  $('cName').value=''; $('cDesc').value='';
+  // Populate type selects
+  $('cIn').innerHTML = getTypeSelectOptions('any');
+  $('cOut').innerHTML = getTypeSelectOptions('any');
 
   // Render icon + color pickers
   $('cIcons').innerHTML = Object.keys(ICO).map(k =>
@@ -1018,30 +1186,131 @@ function doZoom(delta) {
 }
 
 // ========================================================================
-//  SIMULATION
+//  SIMULATION — with animated runner icon along paths
 // ========================================================================
+let simAnim = null; // requestAnimationFrame id
+
 function doSimulate() {
   if (simRunning) return;
   const order = topoSort();
   if (!order.length) { alert('Add and connect nodes to simulate.'); return; }
   simRunning = true;
   $('simBar').classList.remove('hidden');
+
+  // Create the runner icon on SVG layer
+  removeRunner();
+  const svg = $('svgLayer');
+  const runner = document.createElementNS('http://www.w3.org/2000/svg','g');
+  runner.id = 'simRunner';
+  runner.classList.add('sim-runner');
+  runner.innerHTML = `
+    <circle r="12" fill="var(--c-accent)" opacity="0.18"/>
+    <circle r="7" fill="var(--c-accent)"/>
+    <text x="0" y="1" text-anchor="middle" dominant-baseline="central" fill="white" font-size="9" font-weight="bold" font-family="Outfit,sans-serif">⚡</text>
+  `;
+  svg.appendChild(runner);
+
   let step = 0;
+  let phase = 'node'; // 'node' = sitting on node, 'travel' = moving along edge
+
   function tick() {
     if (!simRunning || step >= order.length) { stopSim(); return; }
+
+    // Highlight current node
     document.querySelectorAll('.sim-highlight').forEach(e=>e.classList.remove('sim-highlight'));
-    const el = $('nd_'+order[step]);
-    if (el) el.classList.add('sim-highlight');
+    const curId = order[step];
+    const curEl = $('nd_'+curId);
+    if (curEl) curEl.classList.add('sim-highlight');
     $('simStep').textContent = `${step+1}/${order.length}`;
+
+    // Position runner on current node
+    const curNode = S.nodes.find(x=>x.id===curId);
+    if (curNode) {
+      setRunnerPos(curNode.x + 95, curNode.y + 30);
+      const snEl = $('simNodeName');
+      if (snEl) snEl.textContent = curNode.name;
+    }
+
+    // After a pause on the node, animate to next node along the edge
+    const nextStep = step + 1;
     step++;
-    simTimer = setTimeout(tick, 1100);
+
+    if (nextStep < order.length) {
+      // Find the edge from current to next
+      const nextId = order[nextStep];
+      const edge = S.edges.find(e=>e.from===curId && e.to===nextId);
+      if (edge) {
+        // Animate along the edge path after node dwell
+        simTimer = setTimeout(()=>{
+          if (!simRunning) return;
+          animateAlongEdge(edge, ()=>{
+            tick();
+          });
+        }, 700);
+      } else {
+        // No direct edge — just jump after dwell
+        simTimer = setTimeout(tick, 1000);
+      }
+    } else {
+      // Last step — finish after dwell
+      simTimer = setTimeout(()=>{ stopSim(); }, 1200);
+    }
   }
+
   tick();
+}
+
+function setRunnerPos(x, y) {
+  const runner = $('simRunner');
+  if (runner) runner.setAttribute('transform', `translate(${x},${y})`);
+}
+
+function animateAlongEdge(edge, onDone) {
+  const fn = S.nodes.find(n=>n.id===edge.from);
+  const tn = S.nodes.find(n=>n.id===edge.to);
+  if (!fn || !tn) { onDone(); return; }
+
+  const fx = fn.x+190, fy = fn.y+30;
+  const tx = tn.x, ty = tn.y+30;
+  const cx = Math.max(Math.abs(tx-fx)*0.4, 40);
+
+  // Sample the cubic bezier path
+  const p0 = {x:fx, y:fy};
+  const p1 = {x:fx+cx, y:fy};
+  const p2 = {x:tx-cx, y:ty};
+  const p3 = {x:tx, y:ty};
+
+  const duration = 500; // ms
+  const start = performance.now();
+
+  function frame(now) {
+    if (!simRunning) return;
+    let t = (now - start) / duration;
+    if (t > 1) t = 1;
+    // Cubic bezier interpolation
+    const u = 1 - t;
+    const x = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
+    const y = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
+    setRunnerPos(x, y);
+    if (t < 1) {
+      simAnim = requestAnimationFrame(frame);
+    } else {
+      onDone();
+    }
+  }
+  simAnim = requestAnimationFrame(frame);
+}
+
+function removeRunner() {
+  const r = $('simRunner');
+  if (r) r.remove();
+  if (simAnim) { cancelAnimationFrame(simAnim); simAnim = null; }
 }
 
 function stopSim() {
   simRunning = false;
   clearTimeout(simTimer);
+  removeRunner();
   document.querySelectorAll('.sim-highlight').forEach(e=>e.classList.remove('sim-highlight'));
   $('simBar').classList.add('hidden');
 }
@@ -1096,15 +1365,57 @@ function buildYAML() {
   y += `  namespace: "default"\n`;
   y += `  default_task_queue: "${kebab}-queue"\n\n`;
 
-  // Types
-  const types = new Set();
-  S.nodes.forEach(n => { if(n.inT&&n.inT!=='any') types.add(n.inT); if(n.outT&&n.outT!=='any') types.add(n.outT); });
-  if (types.size) {
+  // Types — emit fully defined custom types, then auto-stubs for referenced but undefined ones
+  const definedTypeNames = new Set(S.types.map(t=>t.name));
+  const referencedTypes = new Set();
+  S.nodes.forEach(n => { if(n.inT&&n.inT!=='any') referencedTypes.add(n.inT); if(n.outT&&n.outT!=='any') referencedTypes.add(n.outT); });
+
+  const hasCustom = S.types.length > 0;
+  const hasUndefined = [...referencedTypes].some(t => !definedTypeNames.has(t) && !BASE_TYPES.find(b=>b.name===t));
+
+  if (hasCustom || hasUndefined) {
     y += `types:\n`;
-    types.forEach(t => {
-      y += `  - name: "${t}"\n    kind: struct\n    fields:\n      - name: data\n        type: string\n        required: true\n        description: "Primary payload"\n`;
+    // Emit fully defined custom types
+    S.types.forEach(t => {
+      y += `  - name: "${t.name}"\n`;
+      if (t.desc) y += `    description: "${esc(t.desc)}"\n`;
+      y += `    kind: ${t.kind}\n`;
+      if (t.kind === 'alias') {
+        y += `    alias_of: "${t.aliasOf || 'string'}"\n`;
+      }
+      if (t.kind === 'struct' && t.fields && t.fields.length) {
+        y += `    fields:\n`;
+        t.fields.forEach(f => {
+          y += `      - name: "${f.name}"\n`;
+          y += `        type: "${f.type}"\n`;
+          y += `        required: ${f.required !== false}\n`;
+          if (f.default) y += `        default: "${esc(f.default)}"\n`;
+          if (f.desc) y += `        description: "${esc(f.desc)}"\n`;
+          if (f.constraints && (f.constraints.min != null || f.constraints.max != null || f.constraints.pattern)) {
+            y += `        constraints:\n`;
+            if (f.constraints.min != null) y += `          min: ${f.constraints.min}\n`;
+            if (f.constraints.max != null) y += `          max: ${f.constraints.max}\n`;
+            if (f.constraints.pattern) y += `          pattern: "${esc(f.constraints.pattern)}"\n`;
+          }
+        });
+      }
+      if (t.kind === 'enum' && t.values && t.values.length) {
+        y += `    values:\n`;
+        t.values.forEach(v => {
+          y += `      - name: "${v.name}"\n`;
+          y += `        value: "${esc(v.value)}"\n`;
+          if (v.desc) y += `        description: "${esc(v.desc)}"\n`;
+        });
+      }
+      y += '\n';
     });
-    y += '\n';
+    // Auto-stubs for referenced but not yet defined types (skip base types and list<>/map<> generics)
+    [...referencedTypes].forEach(tName => {
+      if (definedTypeNames.has(tName)) return;
+      if (BASE_TYPES.find(b=>b.name===tName)) return;
+      if (tName.startsWith('list<') || tName.startsWith('map<')) return;
+      y += `  - name: "${tName}"\n    description: "Auto-generated stub — define in Type Manager"\n    kind: struct\n    fields:\n      - name: data\n        type: string\n        required: true\n        description: "Primary payload"\n\n`;
+    });
   }
 
   // Retry Policies
@@ -1244,12 +1555,371 @@ function downloadYaml() {
 //  CLEAR
 // ========================================================================
 function clearAll() {
-  if (!confirm('Clear all nodes and connections?')) return;
+  if (!confirm('Clear all nodes and connections? (Types will be kept)')) return;
   S.nodes=[]; S.edges=[]; S.sel=null;
   persist();
   rebuildCanvas();
   renderPropsEmpty();
 }
+
+// ========================================================================
+//  TYPE SYSTEM
+// ========================================================================
+const BASE_TYPES = [
+  { name:'string',   desc:'Text / string value', primitive:true, icon:'Aa' },
+  { name:'int',      desc:'Integer number', primitive:true, icon:'#' },
+  { name:'float',    desc:'Decimal number', primitive:true, icon:'.0' },
+  { name:'bool',     desc:'True / false', primitive:true, icon:'⊤' },
+  { name:'bytes',    desc:'Raw binary data', primitive:true, icon:'01' },
+  { name:'datetime', desc:'Date and time (ISO 8601)', primitive:true, icon:'◷' },
+  { name:'duration', desc:'Time duration (e.g. 30s, 5m)', primitive:true, icon:'⏱' },
+  { name:'json',     desc:'Arbitrary JSON object', primitive:true, icon:'{}' },
+  { name:'any',      desc:'Any type (untyped)', primitive:true, icon:'∗' },
+  { name:'list<string>',  desc:'List of strings', primitive:true, icon:'[]' },
+  { name:'list<int>',     desc:'List of integers', primitive:true, icon:'[]' },
+  { name:'list<any>',     desc:'List of any', primitive:true, icon:'[]' },
+  { name:'map<string,string>', desc:'String-to-string map', primitive:true, icon:'⟮⟯' },
+  { name:'map<string,any>',   desc:'String-to-any map', primitive:true, icon:'⟮⟯' },
+];
+
+// S.types is the custom types array, persisted with state
+// Each: { id, name, kind:'struct'|'alias'|'enum', desc, aliasOf, fields:[], values:[] }
+// fields: [{ name, type, required, default, desc, constraints:{min,max,pattern} }]
+// values: [{ name, value, desc }] — for enum kind
+
+if (!S.types) S.types = [];
+
+function persistTypes() {
+  LS.set('types', S.types);
+  updateTypeCount();
+}
+
+function updateTypeCount() {
+  const el = $('typeCount');
+  if (el) el.textContent = S.types.length;
+}
+
+function getAllTypeNames() {
+  const names = BASE_TYPES.map(t=>t.name);
+  S.types.forEach(t => names.push(t.name));
+  return names;
+}
+
+function getTypeSelectOptions(selected) {
+  let h = '';
+  h += `<optgroup label="Base Types">`;
+  BASE_TYPES.forEach(t => {
+    h += `<option value="${t.name}"${t.name===selected?' selected':''}>${t.name}</option>`;
+  });
+  h += `</optgroup>`;
+  if (S.types.length) {
+    h += `<optgroup label="Custom Types">`;
+    S.types.forEach(t => {
+      h += `<option value="${t.name}"${t.name===selected?' selected':''}>${t.name}</option>`;
+    });
+    h += `</optgroup>`;
+    // Also list<CustomType> variants
+    h += `<optgroup label="Lists of Custom">`;
+    S.types.forEach(t => {
+      const ln = 'list<'+t.name+'>';
+      h += `<option value="${ln}"${ln===selected?' selected':''}>${ln}</option>`;
+    });
+    h += `</optgroup>`;
+  }
+  return h;
+}
+
+let selectedTypeId = null;
+
+function openTypesManager() {
+  selectedTypeId = null;
+  $('typesModal').classList.remove('hidden');
+  renderTypesLists();
+  renderTypeEditor();
+}
+
+function renderTypesLists() {
+  // Base types
+  let bh = '';
+  BASE_TYPES.forEach(bt => {
+    bh += `<div class="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-default" style="color:var(--c-text)">
+      <span class="w-5 h-5 rounded text-[10px] font-mono flex items-center justify-center flex-shrink-0" style="background:var(--c-surface2);color:var(--c-text3)">${bt.icon}</span>
+      <div class="min-w-0">
+        <div class="text-[11px] font-mono font-medium truncate">${bt.name}</div>
+        <div class="text-[9px] truncate" style="color:var(--c-text3)">${bt.desc}</div>
+      </div>
+    </div>`;
+  });
+  $('baseTypesList').innerHTML = bh;
+
+  // Custom types
+  let ch = '';
+  if (!S.types.length) {
+    ch = `<p class="text-center py-4 opacity-30 text-[11px]">No custom types yet</p>`;
+  }
+  S.types.forEach(t => {
+    const isActive = selectedTypeId === t.id;
+    const kindBadge = t.kind==='struct'?'S':t.kind==='enum'?'E':'A';
+    const kindColor = t.kind==='struct'?'var(--c-blue)':t.kind==='enum'?'var(--c-purple)':'var(--c-teal)';
+    ch += `<div class="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition hover:opacity-80 group"
+      style="background:${isActive?'var(--c-glow)':'transparent'};color:var(--c-text);${isActive?'outline:1.5px solid var(--c-accent);':''}"
+      onclick="selectType('${t.id}')">
+      <span class="w-5 h-5 rounded text-[10px] font-mono font-bold flex items-center justify-center flex-shrink-0" style="background:${kindColor}22;color:${kindColor}">${kindBadge}</span>
+      <div class="min-w-0 flex-1">
+        <div class="text-[11px] font-mono font-medium truncate">${t.name}</div>
+        <div class="text-[9px] truncate" style="color:var(--c-text3)">${t.kind} · ${t.kind==='struct'?(t.fields||[]).length+' fields':t.kind==='enum'?(t.values||[]).length+' values':t.aliasOf||'—'}</div>
+      </div>
+      <button onclick="event.stopPropagation();deleteType('${t.id}')" class="w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-60 hover:!opacity-100 transition" style="color:var(--c-rose)" title="Delete">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>`;
+  });
+  $('customTypesList').innerHTML = ch;
+  updateTypeCount();
+}
+
+function addNewType() {
+  const t = {
+    id: 'type_' + Date.now(),
+    name: 'NewType',
+    kind: 'struct',
+    desc: '',
+    aliasOf: 'string',
+    fields: [{ name:'data', type:'string', required:true, default:'', desc:'Primary field', constraints:{} }],
+    values: [{ name:'VALUE_ONE', value:'value_one', desc:'' }],
+  };
+  S.types.push(t);
+  persistTypes();
+  selectedTypeId = t.id;
+  renderTypesLists();
+  renderTypeEditor();
+}
+
+function selectType(id) {
+  selectedTypeId = id;
+  renderTypesLists();
+  renderTypeEditor();
+}
+
+function deleteType(id) {
+  if (!confirm('Delete this type?')) return;
+  S.types = S.types.filter(t=>t.id!==id);
+  persistTypes();
+  if (selectedTypeId===id) { selectedTypeId=null; renderTypeEditor(); }
+  renderTypesLists();
+}
+
+function renderTypeEditor() {
+  const panel = $('typeEditorPanel');
+  if (!selectedTypeId) {
+    panel.innerHTML = `<div class="flex flex-col items-center justify-center h-full opacity-30">
+      <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+      <p class="text-sm">Select or create a type to edit</p>
+    </div>`;
+    return;
+  }
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t) return;
+
+  const kindOpts = ['struct','alias','enum'].map(k=>`<option value="${k}"${k===t.kind?' selected':''}>${k==='struct'?'Struct (fields)':k==='alias'?'Alias (rename)':'Enum (values)'}</option>`).join('');
+
+  // Alias "of" options
+  const aliasOpts = BASE_TYPES.map(bt=>`<option value="${bt.name}"${bt.name===t.aliasOf?' selected':''}>${bt.name}</option>`).join('')
+    + S.types.filter(x=>x.id!==t.id).map(ct=>`<option value="${ct.name}"${ct.name===t.aliasOf?' selected':''}>${ct.name}</option>`).join('');
+
+  // Fields editor
+  let fieldsHtml = '';
+  if (t.kind==='struct') {
+    fieldsHtml = `<div class="mt-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold text-xs" style="color:var(--c-text)">Fields</span>
+        <button onclick="addTypeField()" class="text-[11px] font-medium px-2 py-0.5 rounded-md hover:opacity-80 transition" style="color:var(--c-accent)">+ Add Field</button>
+      </div>
+      <div class="border rounded-lg overflow-hidden" style="border-color:var(--c-border)">
+        <table class="w-full text-[11px]">
+          <thead><tr style="background:var(--c-surface2)">
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Name</th>
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Type</th>
+            <th class="text-center px-2 py-1.5 font-semibold" style="color:var(--c-text)">Req</th>
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Default</th>
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Description</th>
+            <th class="w-8"></th>
+          </tr></thead>
+          <tbody id="fieldsTableBody">`;
+    (t.fields||[]).forEach((f, fi) => {
+      fieldsHtml += `<tr class="border-t" style="border-color:var(--c-border)">
+        <td class="px-1.5 py-1"><input value="${esc(f.name)}" onchange="updateTypeField(${fi},'name',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] font-mono focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)"/></td>
+        <td class="px-1.5 py-1"><select onchange="updateTypeField(${fi},'type',this.value)" class="w-full px-1 py-1 rounded border text-[11px] font-mono focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)">${getTypeSelectOptions(f.type)}</select></td>
+        <td class="px-1.5 py-1 text-center"><input type="checkbox" ${f.required?'checked':''} onchange="updateTypeField(${fi},'required',this.checked)" class="accent-orange-500"/></td>
+        <td class="px-1.5 py-1"><input value="${esc(f.default||'')}" onchange="updateTypeField(${fi},'default',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] font-mono focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)" placeholder="—"/></td>
+        <td class="px-1.5 py-1"><input value="${esc(f.desc||'')}" onchange="updateTypeField(${fi},'desc',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)" placeholder="Description…"/></td>
+        <td class="px-1 py-1 text-center"><button onclick="removeTypeField(${fi})" class="opacity-40 hover:opacity-100 transition" style="color:var(--c-rose)" title="Remove">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button></td>
+      </tr>`;
+    });
+    fieldsHtml += `</tbody></table>
+      </div>
+      <!-- Constraints hint -->
+      <div class="mt-2 text-[10px]" style="color:var(--c-text3)">
+        Tip: Use constraints in YAML via <span class="font-mono">min</span>, <span class="font-mono">max</span>, <span class="font-mono">pattern</span> (regex), <span class="font-mono">one_of</span>.
+      </div>
+    </div>`;
+  }
+
+  // Enum values editor
+  let enumHtml = '';
+  if (t.kind==='enum') {
+    enumHtml = `<div class="mt-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold text-xs" style="color:var(--c-text)">Values</span>
+        <button onclick="addTypeEnumValue()" class="text-[11px] font-medium px-2 py-0.5 rounded-md hover:opacity-80 transition" style="color:var(--c-accent)">+ Add Value</button>
+      </div>
+      <div class="border rounded-lg overflow-hidden" style="border-color:var(--c-border)">
+        <table class="w-full text-[11px]">
+          <thead><tr style="background:var(--c-surface2)">
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Name (UPPER_SNAKE)</th>
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Wire Value</th>
+            <th class="text-left px-2.5 py-1.5 font-semibold" style="color:var(--c-text)">Description</th>
+            <th class="w-8"></th>
+          </tr></thead>
+          <tbody>`;
+    (t.values||[]).forEach((v, vi) => {
+      enumHtml += `<tr class="border-t" style="border-color:var(--c-border)">
+        <td class="px-1.5 py-1"><input value="${esc(v.name)}" onchange="updateTypeEnumVal(${vi},'name',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] font-mono focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)"/></td>
+        <td class="px-1.5 py-1"><input value="${esc(v.value)}" onchange="updateTypeEnumVal(${vi},'value',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] font-mono focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)"/></td>
+        <td class="px-1.5 py-1"><input value="${esc(v.desc||'')}" onchange="updateTypeEnumVal(${vi},'desc',this.value)" class="w-full px-1.5 py-1 rounded border text-[11px] focus:outline-none" style="background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)"/></td>
+        <td class="px-1 py-1 text-center"><button onclick="removeTypeEnumVal(${vi})" class="opacity-40 hover:opacity-100 transition" style="color:var(--c-rose)">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button></td>
+      </tr>`;
+    });
+    enumHtml += `</tbody></table></div></div>`;
+  }
+
+  // Alias editor
+  let aliasHtml = '';
+  if (t.kind==='alias') {
+    aliasHtml = `<div class="mt-4">
+      <label class="block font-semibold text-xs mb-1" style="color:var(--c-text)">Alias Of</label>
+      <select onchange="updateTypeTopLevel('aliasOf',this.value)" class="w-full px-2.5 py-2 rounded-md border text-xs font-mono focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${aliasOpts}</select>
+      <p class="mt-1.5 text-[10px]" style="color:var(--c-text3)">This type will be a named alias for the selected base type. Useful for semantic clarity, e.g. <span class="font-mono">EmailAddress → string</span>.</p>
+    </div>`;
+  }
+
+  // Preview badge
+  const previewColor = t.kind==='struct'?'var(--c-blue)':t.kind==='enum'?'var(--c-purple)':'var(--c-teal)';
+
+  panel.innerHTML = `<div class="fade-in space-y-3">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="w-8 h-8 rounded-lg text-xs font-mono font-bold flex items-center justify-center" style="background:${previewColor}18;color:${previewColor}">${t.kind==='struct'?'S':t.kind==='enum'?'E':'A'}</span>
+      <div>
+        <div class="text-sm font-semibold font-mono" style="color:var(--c-text)">${t.name}</div>
+        <div class="text-[10px]" style="color:var(--c-text3)">${t.kind} type</div>
+      </div>
+    </div>
+    <div><label class="block font-medium mb-1" style="color:var(--c-text)">Type Name <span class="font-normal" style="color:var(--c-text3)">(PascalCase)</span></label>
+      <input value="${esc(t.name)}" onchange="updateTypeTopLevel('name',this.value)" class="w-full px-2.5 py-2 rounded-md border font-mono focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)"/></div>
+    <div><label class="block font-medium mb-1" style="color:var(--c-text)">Description</label>
+      <textarea onchange="updateTypeTopLevel('desc',this.value)" rows="2" class="w-full px-2.5 py-2 rounded-md border focus:outline-none resize-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${t.desc||''}</textarea></div>
+    <div><label class="block font-medium mb-1" style="color:var(--c-text)">Kind</label>
+      <select onchange="updateTypeTopLevel('kind',this.value)" class="w-full px-2.5 py-2 rounded-md border focus:outline-none" style="background:var(--c-surface2);border-color:var(--c-border);color:var(--c-text)">${kindOpts}</select></div>
+    ${aliasHtml}
+    ${fieldsHtml}
+    ${enumHtml}
+    <!-- Usage hint -->
+    <div class="mt-4 p-3 rounded-lg" style="background:var(--c-surface2)">
+      <div class="font-semibold text-[11px] mb-1" style="color:var(--c-text)">Usage</div>
+      <p class="text-[10px] leading-relaxed" style="color:var(--c-text2)">
+        This type (<span class="font-mono font-medium" style="color:var(--c-accent)">${t.name}</span>) is available in all node Input/Output type dropdowns.
+        It will be exported as a fully-typed definition in the YAML schema under the <span class="font-mono">types:</span> section.
+      </p>
+    </div>
+  </div>`;
+}
+
+function updateTypeTopLevel(key, val) {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t) return;
+  t[key] = val;
+  persistTypes();
+  renderTypesLists();
+  renderTypeEditor();
+}
+
+// Struct fields
+function addTypeField() {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t) return;
+  if (!t.fields) t.fields = [];
+  t.fields.push({ name:'new_field', type:'string', required:true, default:'', desc:'', constraints:{} });
+  persistTypes();
+  renderTypeEditor();
+}
+
+function updateTypeField(idx, key, val) {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t || !t.fields || !t.fields[idx]) return;
+  t.fields[idx][key] = val;
+  persistTypes();
+}
+
+function removeTypeField(idx) {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t || !t.fields) return;
+  t.fields.splice(idx, 1);
+  persistTypes();
+  renderTypeEditor();
+}
+
+// Enum values
+function addTypeEnumValue() {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t) return;
+  if (!t.values) t.values = [];
+  const n = t.values.length + 1;
+  t.values.push({ name:'VALUE_'+n, value:'value_'+n, desc:'' });
+  persistTypes();
+  renderTypeEditor();
+}
+
+function updateTypeEnumVal(idx, key, val) {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t || !t.values || !t.values[idx]) return;
+  t.values[idx][key] = val;
+  persistTypes();
+}
+
+function removeTypeEnumVal(idx) {
+  const t = S.types.find(x=>x.id===selectedTypeId);
+  if (!t || !t.values) return;
+  t.values.splice(idx, 1);
+  persistTypes();
+  renderTypeEditor();
+}
+
+// ========================================================================
+//  KEYBOARD SHORTCUTS
+// ========================================================================
+document.addEventListener('keydown', e => {
+  // Delete or Backspace removes selected node (if not in an input/textarea)
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.sel) {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    e.preventDefault();
+    removeNode(S.sel);
+  }
+  // Escape deselects
+  if (e.key === 'Escape') {
+    if (S.sel) {
+      S.sel = null;
+      document.querySelectorAll('.flow-node').forEach(el => el.classList.remove('selected'));
+      renderPropsEmpty();
+    }
+    // Close modals
+    document.querySelectorAll('.modal-bg:not(.hidden)').forEach(m => m.classList.add('hidden'));
+  }
+});
 
 // ========================================================================
 //  BOOT
