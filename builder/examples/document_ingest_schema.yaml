@@ -1,0 +1,235 @@
+schema_version: "1.0.0"
+
+metadata:
+  name: "document-ingest"
+  description: "Example Temporal document ingest workflow for Python code generation"
+  language:
+    - python
+  namespace: "default"
+  default_task_queue: "document-ingest-queue"
+  labels:
+    team: "platform"
+    example: "true"
+
+types:
+  - name: FileStorageType
+    description: "Where converted text should be saved"
+    kind: enum
+    values:
+      - name: SHARED_FS
+        value: "shared_fs"
+      - name: DATABASE
+        value: "database"
+      - name: S3
+        value: "s3"
+
+  - name: DocumentIngestInput
+    kind: struct
+    fields:
+      - name: file_path
+        type: string
+        required: true
+      - name: storage_type
+        type: FileStorageType
+        required: true
+
+  - name: DetermineFileTypeInput
+    kind: struct
+    fields:
+      - name: file_path
+        type: string
+        required: true
+
+  - name: DetermineFileTypeOutput
+    kind: struct
+    fields:
+      - name: file_type
+        type: string
+        required: true
+      - name: mime_type
+        type: string
+        required: true
+
+  - name: ConvertToTextInput
+    kind: struct
+    fields:
+      - name: file_path
+        type: string
+        required: true
+      - name: file_type
+        type: string
+        required: true
+
+  - name: ConvertToTextOutput
+    kind: struct
+    fields:
+      - name: text
+        type: string
+        required: true
+      - name: page_count
+        type: int
+        required: true
+
+  - name: SaveConvertedTextInput
+    kind: struct
+    fields:
+      - name: file_path
+        type: string
+        required: true
+      - name: storage_type
+        type: FileStorageType
+        required: true
+      - name: text
+        type: string
+        required: true
+
+  - name: SaveConvertedTextOutput
+    kind: struct
+    fields:
+      - name: saved_to
+        type: string
+        required: true
+      - name: record_id
+        type: string
+        required: true
+
+  - name: DocumentIngestResult
+    kind: struct
+    fields:
+      - name: file_type
+        type: string
+        required: true
+      - name: mime_type
+        type: string
+        required: true
+      - name: text_preview
+        type: string
+        required: true
+      - name: saved_to
+        type: string
+        required: true
+      - name: record_id
+        type: string
+        required: true
+
+retry_policies:
+  - name: default-retry
+    initial_interval: "1s"
+    backoff_coefficient: 2.0
+    max_interval: "30s"
+    max_attempts: 3
+    non_retryable_error_types:
+      - "ValueError"
+
+activities:
+  - name: determine_file_type
+    description: "Determine file type from file path"
+    mode: sync
+    input:
+      type: DetermineFileTypeInput
+      description: "Path to file"
+    output:
+      type: DetermineFileTypeOutput
+      description: "Static detected type"
+    schedule_to_close_timeout: "1m"
+    start_to_close_timeout: "30s"
+    retry_policy: "default-retry"
+
+  - name: convert_to_text
+    description: "Convert file to text"
+    mode: sync
+    input:
+      type: ConvertToTextInput
+      description: "File path and detected type"
+    output:
+      type: ConvertToTextOutput
+      description: "Static text conversion"
+    schedule_to_close_timeout: "2m"
+    start_to_close_timeout: "1m"
+    retry_policy: "default-retry"
+
+  - name: save_converted_text
+    description: "Persist converted text"
+    mode: sync
+    input:
+      type: SaveConvertedTextInput
+      description: "Save request"
+    output:
+      type: SaveConvertedTextOutput
+      description: "Static save result"
+    schedule_to_close_timeout: "2m"
+    start_to_close_timeout: "1m"
+    retry_policy: "default-retry"
+
+workflows:
+  - name: DocumentIngestWorkflow
+    description: "Document ingest workflow"
+    mode: sync
+    id_pattern: "doc-ingest-{{input.file_path}}"
+    id_reuse_policy: reject_duplicate
+    input:
+      type: DocumentIngestInput
+      description: "Document ingest request"
+    output:
+      type: DocumentIngestResult
+      description: "Workflow result"
+    execution_timeout: "10m"
+    run_timeout: "10m"
+    task_timeout: "10s"
+    task_queue: "document-ingest-queue"
+    steps:
+      - id: step_determine_type
+        kind: activity
+        activity: determine_file_type
+        input_mapping: "{{input.file_path}}"
+        output_var: file_type_result
+
+      - id: step_convert_to_text
+        kind: activity
+        activity: convert_to_text
+        input_mapping: "{{input}}"
+        output_var: convert_result
+        depends_on: ["step_determine_type"]
+
+      - id: step_save_text
+        kind: activity
+        activity: save_converted_text
+        input_mapping: "{{input}}"
+        output_var: save_result
+        depends_on: ["step_convert_to_text"]
+
+workers:
+  - name: document-ingest-worker
+    description: "Hosts workflow and activities"
+    task_queue: "document-ingest-queue"
+    namespace: "default"
+    activities:
+      - determine_file_type
+      - convert_to_text
+      - save_converted_text
+    workflows:
+      - DocumentIngestWorkflow
+    max_concurrent_activities: 100
+    max_concurrent_workflow_tasks: 100
+    graceful_shutdown_timeout: "15s"
+
+clients:
+  - name: document-ingest-client
+    description: "Client used to invoke document ingest workflow"
+    namespace: "default"
+    target: "localhost:7233"
+    allowed_workflows:
+      - DocumentIngestWorkflow
+    allowed_signals: []
+    allowed_queries: []
+    allowed_updates: []
+    default_mode: sync
+    rpc_timeout: "10s"
+    data_converter:
+      encoding: json
+      encryption:
+        enabled: false
+        key_id: ""
+      compression:
+        enabled: false
+        algorithm: gzip
