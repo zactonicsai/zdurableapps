@@ -479,6 +479,16 @@ const ICO = {
   clipboard:`<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>`,
   link:`<path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>`,
   star:`<path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>`,
+  brain:`<path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>`,
+  shield:`<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>`,
+  eye:`<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`,
+  robot:`<path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>`,
+  wand:`<path d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/>`,
+  layers:`<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>`,
+  scan:`<path d="M7 3H5a2 2 0 00-2 2v2m14-4h2a2 2 0 012 2v2M3 17v2a2 2 0 002 2h2m12 0h2a2 2 0 002-2v-2M7 12h10"/>`,
+  key:`<path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>`,
+  cpu:`<path d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 7h10v10H7V7z"/>`,
+  sparkle:`<path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>`,
 };
 
 function icoSvg(key, cls='w-5 h-5') {
@@ -561,27 +571,122 @@ const LIBRARY = {
     { name:'Save to CRM', icon:'database', color:'indigo', desc:'Write a record to CRM', inT:'CRMRecord', outT:'CRMRef', cat:'Data' },
     { name:'API Call', icon:'globe', color:'indigo', desc:'Make an HTTP API request', inT:'HTTPRequest', outT:'HTTPResponse', cat:'Data' },
     { name:'Webhook Trigger', icon:'signal', color:'indigo', desc:'Fire a webhook event', inT:'WebhookPayload', outT:'WebhookResult', cat:'Data' },
+    // -- AI / LLM --
+    { name:'LLM Summarize', icon:'sparkle', color:'purple', desc:'Summarize text using a large language model', inT:'TextData', outT:'Summary', cat:'AI / LLM' },
+    { name:'LLM Generate', icon:'sparkle', color:'purple', desc:'Generate text from a prompt via LLM', inT:'LLMPrompt', outT:'LLMResponse', cat:'AI / LLM' },
+    { name:'LLM Classify', icon:'brain', color:'purple', desc:'Classify content into categories using LLM', inT:'ClassifyRequest', outT:'ClassifyResult', cat:'AI / LLM' },
+    { name:'LLM Extract', icon:'brain', color:'purple', desc:'Extract structured data from text via LLM', inT:'TextData', outT:'ExtractedData', cat:'AI / LLM' },
+    { name:'LLM Translate', icon:'sparkle', color:'purple', desc:'Translate text between languages', inT:'TranslateReq', outT:'TranslateResult', cat:'AI / LLM' },
+    { name:'LLM Q&A', icon:'brain', color:'purple', desc:'Answer questions over documents or data', inT:'QARequest', outT:'QAResponse', cat:'AI / LLM' },
+    { name:'LLM Rewrite', icon:'sparkle', color:'purple', desc:'Rewrite or rephrase text with LLM', inT:'RewriteReq', outT:'RewriteResult', cat:'AI / LLM' },
+    { name:'Embedding Generate', icon:'cpu', color:'purple', desc:'Create vector embeddings from text', inT:'TextData', outT:'EmbeddingVector', cat:'AI / LLM' },
+    { name:'Vector Search', icon:'search', color:'purple', desc:'Search a vector database for similar items', inT:'VectorQuery', outT:'VectorResults', cat:'AI / LLM' },
+    { name:'RAG Retrieve', icon:'layers', color:'purple', desc:'Retrieve context from knowledge base for RAG', inT:'RAGQuery', outT:'RAGContext', cat:'AI / LLM' },
+    { name:'Prompt Template', icon:'doc', color:'purple', desc:'Fill a prompt template with variables', inT:'PromptTemplateReq', outT:'LLMPrompt', cat:'AI / LLM' },
+    { name:'AI Eval / Score', icon:'chart', color:'purple', desc:'Evaluate LLM output quality or score', inT:'EvalRequest', outT:'EvalScore', cat:'AI / LLM' },
+    // -- AI AGENTS --
+    { name:'AI Agent Task', icon:'robot', color:'indigo', desc:'Delegate a task to an autonomous AI agent', inT:'AgentTask', outT:'AgentResult', cat:'AI Agent' },
+    { name:'Agent Tool Call', icon:'wand', color:'indigo', desc:'Agent invokes an external tool or API', inT:'ToolCallReq', outT:'ToolCallResult', cat:'AI Agent' },
+    { name:'Agent Plan', icon:'robot', color:'indigo', desc:'Agent generates a step-by-step plan', inT:'PlanRequest', outT:'AgentPlan', cat:'AI Agent' },
+    { name:'Agent Execute', icon:'robot', color:'indigo', desc:'Agent executes planned steps sequentially', inT:'AgentPlan', outT:'AgentResult', cat:'AI Agent' },
+    { name:'Agent Reflect', icon:'brain', color:'indigo', desc:'Agent reviews its own output for quality', inT:'AgentResult', outT:'ReflectionResult', cat:'AI Agent' },
+    { name:'Multi-Agent Collab', icon:'people', color:'indigo', desc:'Multiple agents collaborate on a task', inT:'CollabRequest', outT:'CollabResult', cat:'AI Agent' },
+    { name:'Agent Memory Store', icon:'database', color:'indigo', desc:'Save context to agent long-term memory', inT:'MemoryPayload', outT:'MemoryRef', cat:'AI Agent' },
+    { name:'Agent Memory Recall', icon:'search', color:'indigo', desc:'Retrieve from agent long-term memory', inT:'RecallQuery', outT:'MemoryPayload', cat:'AI Agent' },
+    // -- OCR & VISION --
+    { name:'OCR Document', icon:'scan', color:'teal', desc:'Extract text from images or scanned PDFs', inT:'ImageRef', outT:'OCRResult', cat:'OCR & Vision' },
+    { name:'OCR Receipt', icon:'scan', color:'teal', desc:'Parse receipt/invoice from image', inT:'ImageRef', outT:'ReceiptData', cat:'OCR & Vision' },
+    { name:'OCR ID Card', icon:'scan', color:'teal', desc:'Extract identity info from ID card image', inT:'ImageRef', outT:'IDCardData', cat:'OCR & Vision' },
+    { name:'OCR Handwriting', icon:'scan', color:'teal', desc:'Recognize handwritten text from image', inT:'ImageRef', outT:'OCRResult', cat:'OCR & Vision' },
+    { name:'Image Classify', icon:'eye', color:'teal', desc:'Classify an image into categories', inT:'ImageRef', outT:'ClassifyResult', cat:'OCR & Vision' },
+    { name:'Image Describe', icon:'eye', color:'teal', desc:'Generate a text description of an image', inT:'ImageRef', outT:'ImageDescription', cat:'OCR & Vision' },
+    { name:'PDF to Text', icon:'doc', color:'teal', desc:'Convert a PDF to searchable text', inT:'DocumentRef', outT:'TextData', cat:'OCR & Vision' },
+    // -- SECURITY & COMPLIANCE --
+    { name:'Auth Check', icon:'key', color:'rose', desc:'Verify user authentication token', inT:'AuthToken', outT:'AuthResult', cat:'Security' },
+    { name:'Permission Check', icon:'shield', color:'rose', desc:'Verify user has required permissions', inT:'PermissionReq', outT:'PermissionResult', cat:'Security' },
+    { name:'Content Moderation', icon:'shield', color:'rose', desc:'Scan content for policy violations', inT:'ContentRef', outT:'ModerationResult', cat:'Security' },
+    { name:'PII Detection', icon:'eye', color:'rose', desc:'Detect personally identifiable information', inT:'TextData', outT:'PIIReport', cat:'Security' },
+    { name:'PII Redaction', icon:'shield', color:'rose', desc:'Redact PII from text or documents', inT:'TextData', outT:'RedactedText', cat:'Security' },
+    { name:'Toxicity Check', icon:'shield', color:'rose', desc:'Score text for toxic or harmful content', inT:'TextData', outT:'ToxicityScore', cat:'Security' },
+    { name:'Compliance Audit', icon:'clipboard', color:'rose', desc:'Audit data for regulatory compliance', inT:'AuditRequest', outT:'AuditReport', cat:'Security' },
+    { name:'Encrypt Data', icon:'key', color:'rose', desc:'Encrypt sensitive data payload', inT:'DataPayload', outT:'EncryptedData', cat:'Security' },
+    { name:'Decrypt Data', icon:'key', color:'rose', desc:'Decrypt an encrypted payload', inT:'EncryptedData', outT:'DataPayload', cat:'Security' },
+    { name:'Fraud Detection', icon:'shield', color:'rose', desc:'Score a transaction for fraud risk', inT:'TransactionData', outT:'FraudScore', cat:'Security' },
+    { name:'Vulnerability Scan', icon:'shield', color:'rose', desc:'Scan an endpoint for security issues', inT:'ScanTarget', outT:'VulnReport', cat:'Security' },
+    // -- AI CHECKS & GUARDRAILS --
+    { name:'Hallucination Check', icon:'brain', color:'orange', desc:'Verify LLM output against source facts', inT:'FactCheckReq', outT:'FactCheckResult', cat:'AI Checks' },
+    { name:'Bias Detection', icon:'chart', color:'orange', desc:'Detect bias in text or model output', inT:'TextData', outT:'BiasReport', cat:'AI Checks' },
+    { name:'Prompt Injection Guard', icon:'shield', color:'orange', desc:'Detect prompt injection attempts', inT:'LLMPrompt', outT:'GuardResult', cat:'AI Checks' },
+    { name:'Output Validation', icon:'approve', color:'orange', desc:'Validate LLM output matches schema/rules', inT:'ValidationReq', outT:'ValidationResult', cat:'AI Checks' },
+    { name:'Confidence Filter', icon:'chart', color:'orange', desc:'Filter results below confidence threshold', inT:'ScoredResults', outT:'FilteredResults', cat:'AI Checks' },
+    { name:'Human Review Gate', icon:'people', color:'orange', desc:'Route low-confidence items to human review', inT:'ReviewRequest', outT:'ReviewResult', cat:'AI Checks' },
   ],
   workflows: [
-    { name:'Onboarding Flow', icon:'workflow', color:'slate', desc:'New customer/employee onboarding', inT:'OnboardReq', outT:'OnboardResult', cat:'Workflow' },
-    { name:'Approval Pipeline', icon:'workflow', color:'slate', desc:'Multi-stage approval process', inT:'ApprovalReq', outT:'ApprovalResult', cat:'Workflow' },
-    { name:'Report Pipeline', icon:'workflow', color:'slate', desc:'End-to-end report generation', inT:'ReportConfig', outT:'Document', cat:'Workflow' },
-    { name:'Lead Nurture', icon:'workflow', color:'slate', desc:'Automated lead nurturing', inT:'LeadInfo', outT:'NurtureResult', cat:'Workflow' },
-    { name:'Incident Response', icon:'workflow', color:'slate', desc:'Handle and escalate incidents', inT:'IncidentDef', outT:'Resolution', cat:'Workflow' },
-    { name:'Content Pipeline', icon:'workflow', color:'slate', desc:'Create → Review → Publish content', inT:'ContentBrief', outT:'PublishResult', cat:'Workflow' },
+    // -- BUSINESS WORKFLOWS --
+    { name:'Onboarding Flow', icon:'workflow', color:'slate', desc:'New customer/employee onboarding', inT:'OnboardReq', outT:'OnboardResult', cat:'Business' },
+    { name:'Approval Pipeline', icon:'workflow', color:'slate', desc:'Multi-stage approval process', inT:'ApprovalReq', outT:'ApprovalResult', cat:'Business' },
+    { name:'Report Pipeline', icon:'workflow', color:'slate', desc:'End-to-end report generation', inT:'ReportConfig', outT:'Document', cat:'Business' },
+    { name:'Lead Nurture', icon:'workflow', color:'slate', desc:'Automated lead nurturing', inT:'LeadInfo', outT:'NurtureResult', cat:'Business' },
+    { name:'Incident Response', icon:'workflow', color:'slate', desc:'Handle and escalate incidents', inT:'IncidentDef', outT:'Resolution', cat:'Business' },
+    { name:'Content Pipeline', icon:'workflow', color:'slate', desc:'Create → Review → Publish content', inT:'ContentBrief', outT:'PublishResult', cat:'Business' },
+    { name:'Invoice Processing', icon:'workflow', color:'slate', desc:'Receive → Validate → Pay invoices', inT:'InvoiceData', outT:'PaymentResult', cat:'Business' },
+    { name:'Customer Support', icon:'workflow', color:'slate', desc:'Triage → Resolve → Follow-up', inT:'SupportTicket', outT:'Resolution', cat:'Business' },
+    // -- AI & AGENT WORKFLOWS --
+    { name:'RAG Pipeline', icon:'robot', color:'purple', desc:'Retrieve → Augment → Generate with LLM', inT:'RAGQuery', outT:'LLMResponse', cat:'AI Workflow' },
+    { name:'Doc Intelligence', icon:'brain', color:'purple', desc:'OCR → Extract → Classify → Summarize', inT:'DocumentRef', outT:'DocIntelResult', cat:'AI Workflow' },
+    { name:'AI Agent Loop', icon:'robot', color:'purple', desc:'Plan → Execute → Reflect → Iterate', inT:'AgentTask', outT:'AgentResult', cat:'AI Workflow' },
+    { name:'Multi-Agent Flow', icon:'people', color:'purple', desc:'Coordinate multiple AI agents on a task', inT:'CollabRequest', outT:'CollabResult', cat:'AI Workflow' },
+    { name:'Content Gen + Review', icon:'sparkle', color:'purple', desc:'LLM Generate → Hallucination check → Human review', inT:'ContentBrief', outT:'VerifiedContent', cat:'AI Workflow' },
+    { name:'Data Enrichment', icon:'layers', color:'purple', desc:'Raw data → LLM classify → Validate → Store', inT:'DataPayload', outT:'EnrichedData', cat:'AI Workflow' },
+    { name:'Email AI Responder', icon:'email', color:'purple', desc:'Read email → AI draft → Human approve → Send', inT:'EmailRef', outT:'SendResult', cat:'AI Workflow' },
+    { name:'Meeting AI Assistant', icon:'brain', color:'purple', desc:'Transcribe → Summarize → Extract actions → Notify', inT:'AudioRef', outT:'MeetingSummary', cat:'AI Workflow' },
+    { name:'Research Agent', icon:'robot', color:'purple', desc:'Query → Web search → Analyze → Report', inT:'ResearchBrief', outT:'ResearchReport', cat:'AI Workflow' },
+    { name:'Code Review Agent', icon:'robot', color:'purple', desc:'Analyze code → Find issues → Suggest fixes', inT:'CodeRef', outT:'ReviewReport', cat:'AI Workflow' },
+    // -- SECURITY WORKFLOWS --
+    { name:'Secure Doc Pipeline', icon:'shield', color:'rose', desc:'Upload → PII scan → Redact → Store encrypted', inT:'DocumentRef', outT:'SecureDocRef', cat:'Security Workflow' },
+    { name:'Content Moderation', icon:'shield', color:'rose', desc:'AI check → Toxicity → Human escalation', inT:'ContentRef', outT:'ModerationResult', cat:'Security Workflow' },
+    { name:'Identity Verification', icon:'key', color:'rose', desc:'OCR ID → Face match → Liveness → Decision', inT:'VerifyRequest', outT:'VerifyResult', cat:'Security Workflow' },
+    { name:'Fraud Review Pipeline', icon:'shield', color:'rose', desc:'Score → Flag → Investigate → Resolve', inT:'TransactionData', outT:'FraudDecision', cat:'Security Workflow' },
   ],
   controls: [
-    { name:'If / Else', icon:'branch', color:'amber', desc:'Branch on a condition', inT:'any', outT:'any', cat:'Control', kind:'condition' },
-    { name:'Parallel', icon:'parallel', color:'amber', desc:'Run branches simultaneously', inT:'any', outT:'any', cat:'Control', kind:'parallel' },
-    { name:'Wait for Signal', icon:'signal', color:'amber', desc:'Pause until a signal arrives', inT:'any', outT:'SignalPayload', cat:'Control', kind:'signal_wait' },
-    { name:'Timer / Delay', icon:'timer', color:'amber', desc:'Wait for a duration', inT:'any', outT:'any', cat:'Control', kind:'timer' },
-    { name:'Loop', icon:'transform', color:'amber', desc:'Iterate over a collection', inT:'any', outT:'any', cat:'Control', kind:'activity' },
+    // -- FLOW CONTROL --
+    { name:'If / Else', icon:'branch', color:'amber', desc:'Branch on a condition', inT:'any', outT:'any', cat:'Flow Control', kind:'condition' },
+    { name:'Parallel', icon:'parallel', color:'amber', desc:'Run branches simultaneously', inT:'any', outT:'any', cat:'Flow Control', kind:'parallel' },
+    { name:'Wait for Signal', icon:'signal', color:'amber', desc:'Pause until a signal arrives', inT:'any', outT:'SignalPayload', cat:'Flow Control', kind:'signal_wait' },
+    { name:'Timer / Delay', icon:'timer', color:'amber', desc:'Wait for a duration', inT:'any', outT:'any', cat:'Flow Control', kind:'timer' },
+    { name:'Loop / Iterate', icon:'transform', color:'amber', desc:'Iterate over a collection', inT:'list<any>', outT:'list<any>', cat:'Flow Control', kind:'activity' },
+    { name:'Switch / Case', icon:'branch', color:'amber', desc:'Multi-way branch on a value', inT:'any', outT:'any', cat:'Flow Control', kind:'condition' },
+    { name:'Fan Out / Fan In', icon:'parallel', color:'amber', desc:'Split work then merge results', inT:'list<any>', outT:'list<any>', cat:'Flow Control', kind:'parallel' },
+    // -- ERROR HANDLING --
+    { name:'Try / Catch', icon:'shield', color:'rose', desc:'Wrap steps with error handling', inT:'any', outT:'any', cat:'Error Handling', kind:'activity' },
+    { name:'Retry w/ Backoff', icon:'timer', color:'rose', desc:'Retry with exponential backoff', inT:'any', outT:'any', cat:'Error Handling', kind:'activity' },
+    { name:'Fallback', icon:'branch', color:'rose', desc:'Use fallback if primary step fails', inT:'any', outT:'any', cat:'Error Handling', kind:'condition' },
+    { name:'Dead Letter', icon:'database', color:'rose', desc:'Route failed items to dead letter queue', inT:'any', outT:'any', cat:'Error Handling', kind:'activity' },
+    { name:'Circuit Breaker', icon:'signal', color:'rose', desc:'Stop retrying after repeated failures', inT:'any', outT:'any', cat:'Error Handling', kind:'condition' },
+    // -- ORCHESTRATION --
+    { name:'Continue As New', icon:'transform', color:'indigo', desc:'Reset workflow history and restart', inT:'any', outT:'any', cat:'Orchestration', kind:'activity' },
+    { name:'Child Workflow', icon:'workflow', color:'indigo', desc:'Launch a child workflow', inT:'any', outT:'any', cat:'Orchestration', kind:'activity' },
+    { name:'Send Signal', icon:'signal', color:'indigo', desc:'Send a signal to another workflow', inT:'any', outT:'any', cat:'Orchestration', kind:'activity' },
+    { name:'Side Effect', icon:'wand', color:'indigo', desc:'Non-deterministic operation (UUID, random)', inT:'any', outT:'any', cat:'Orchestration', kind:'activity' },
+    // -- AI CONTROL --
+    { name:'Confidence Gate', icon:'chart', color:'purple', desc:'Route by AI confidence score', inT:'ScoredResults', outT:'any', cat:'AI Control', kind:'condition' },
+    { name:'Human-in-Loop', icon:'people', color:'purple', desc:'Wait for human approval to continue', inT:'any', outT:'ApprovalResult', cat:'AI Control', kind:'signal_wait' },
+    { name:'AI Retry Loop', icon:'brain', color:'purple', desc:'Retry LLM call with refined prompt', inT:'LLMPrompt', outT:'LLMResponse', cat:'AI Control', kind:'activity' },
+    { name:'Agent Checkpoint', icon:'robot', color:'purple', desc:'Save agent state for recovery', inT:'any', outT:'any', cat:'AI Control', kind:'activity' },
   ],
   custom: [],
 };
 
 // Load saved custom items
 try { const c = LS.get('custom'); if(c) LIBRARY.custom = c; } catch(e){}
+try {
+  const cw = LS.get('customWorkflows');
+  if(cw) cw.forEach(w => { if(!LIBRARY.workflows.find(x=>x.name===w.name)) LIBRARY.workflows.push(w); });
+} catch(e){}
+try {
+  const cc = LS.get('customControls');
+  if(cc) cc.forEach(c => { if(!LIBRARY.controls.find(x=>x.name===c.name)) LIBRARY.controls.push(c); });
+} catch(e){}
 
 // ========================================================================
 //  APPLICATION STATE
@@ -660,8 +765,16 @@ function renderPalette() {
 
   let h = '';
   if (paletteTab === 'custom') {
-    h += `<button onclick="openCustomModal()" class="w-full py-2 my-2 border-2 border-dashed rounded-lg text-xs hover:opacity-80 transition"
+    h += `<button onclick="openCustomModal('activity')" class="w-full py-2 my-2 border-2 border-dashed rounded-lg text-xs hover:opacity-80 transition"
       style="border-color:var(--c-border);color:var(--c-text3)">+ New Custom Activity</button>`;
+  }
+  if (paletteTab === 'workflows') {
+    h += `<button onclick="openCustomModal('workflow')" class="w-full py-2 my-2 border-2 border-dashed rounded-lg text-xs hover:opacity-80 transition"
+      style="border-color:var(--c-accent);color:var(--c-accent)">+ New Custom Workflow</button>`;
+  }
+  if (paletteTab === 'controls') {
+    h += `<button onclick="openCustomModal('control')" class="w-full py-2 my-2 border-2 border-dashed rounded-lg text-xs hover:opacity-80 transition"
+      style="border-color:var(--c-accent);color:var(--c-accent)">+ New Custom Control</button>`;
   }
   for (const [grp, items] of Object.entries(groups)) {
     h += `<div class="mt-3 mb-1 px-1 text-[10px] font-semibold uppercase tracking-widest" style="color:var(--c-text3)">${grp}</div>`;
@@ -1133,11 +1246,19 @@ function saveEdit() {
 // ========================================================================
 //  CUSTOM ACTIVITY MODAL
 // ========================================================================
-function openCustomModal() {
+let customCreateMode = 'activity'; // 'activity' | 'workflow' | 'control'
+
+function openCustomModal(mode) {
+  customCreateMode = mode || 'activity';
   $('cName').value=''; $('cDesc').value='';
   // Populate type selects
   $('cIn').innerHTML = getTypeSelectOptions('any');
   $('cOut').innerHTML = getTypeSelectOptions('any');
+
+  // Update modal title
+  const titles = { activity:'New Custom Activity', workflow:'New Custom Workflow', control:'New Custom Control' };
+  const titleEl = $('customModal').querySelector('.text-sm.font-semibold');
+  if (titleEl) titleEl.textContent = titles[customCreateMode] || 'New Custom Item';
 
   // Render icon + color pickers
   $('cIcons').innerHTML = Object.keys(ICO).map(k =>
@@ -1157,7 +1278,7 @@ function openCustomModal() {
 
 function saveCustom() {
   const item = {
-    name: $('cName').value || 'Custom Activity',
+    name: $('cName').value || 'Custom Item',
     desc: $('cDesc').value || '',
     inT: $('cIn').value || 'any',
     outT: $('cOut').value || 'any',
@@ -1165,10 +1286,22 @@ function saveCustom() {
     color: $('cColorVal').value || 'blue',
     cat: 'Custom'
   };
-  LIBRARY.custom.push(item);
+  if (customCreateMode === 'control') {
+    item.kind = 'activity';
+    item.cat = 'Custom Control';
+    LIBRARY.controls.push(item);
+  } else if (customCreateMode === 'workflow') {
+    item.cat = 'Custom Workflow';
+    LIBRARY.workflows.push(item);
+  } else {
+    LIBRARY.custom.push(item);
+  }
   LS.set('custom', LIBRARY.custom);
+  LS.set('customWorkflows', LIBRARY.workflows.filter(w=>w.cat==='Custom Workflow'));
+  LS.set('customControls', LIBRARY.controls.filter(c=>c.cat==='Custom Control'));
   $('customModal').classList.add('hidden');
-  switchPaletteTab('custom', document.querySelector('[data-tab="custom"]'));
+  switchPaletteTab(customCreateMode==='control'?'controls':customCreateMode==='workflow'?'workflows':'custom',
+    document.querySelector(`[data-tab="${customCreateMode==='control'?'controls':customCreateMode==='workflow'?'workflows':'custom'}"]`));
 }
 
 // ========================================================================
