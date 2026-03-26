@@ -1,31 +1,57 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from temporalio import activity
 
-from models import *
+from logging_config import get_logger
+from models import ConvertToTextInput, ConvertToTextOutput, DetermineFileTypeInput, DetermineFileTypeOutput, SaveConvertedTextInput, SaveConvertedTextOutput
+
+logger = get_logger(__name__)
 
 
 @activity.defn
 async def determine_file_type(input_data: DetermineFileTypeInput) -> DetermineFileTypeOutput:
-    # TODO: Replace the static return below with the real processor implementation.
-    # Example real logic: sniff MIME type, convert to text, save to DB/shared FS/S3, etc.
-    activity.logger.info("running activity", extra={"activity": "determine_file_type"})
-    return DetermineFileTypeOutput(file_type="pdf", mime_type="application/pdf")
+    logger.info("activity.start", activity="determine_file_type", file_path=input_data.file_path)
+    # TODO: Replace this static stub with the real processor implementation.
+    suffix = Path(input_data.file_path).suffix.lower()
+    file_type = "text"
+    mime_type = "text/plain"
+    if suffix == ".pdf":
+        file_type = "pdf"
+        mime_type = "application/pdf"
+    elif suffix in {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"}:
+        file_type = "image"
+        mime_type = f"image/{suffix.lstrip('.')}"
+    elif suffix in {".doc", ".docx"}:
+        file_type = "word"
+        mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    result = DetermineFileTypeOutput(file_type=file_type, mime_type=mime_type)
+    logger.info("activity.complete", activity="determine_file_type", result=result)
+    return result
 
 
 @activity.defn
 async def convert_to_text(input_data: ConvertToTextInput) -> ConvertToTextOutput:
-    # TODO: Replace the static return below with the real processor implementation.
-    # Example real logic: sniff MIME type, convert to text, save to DB/shared FS/S3, etc.
-    activity.logger.info("running activity", extra={"activity": "convert_to_text"})
-    return ConvertToTextOutput(text="static extracted text", page_count=1)
+    logger.info("activity.start", activity="convert_to_text", file_path=input_data.file_path, file_type=input_data.file_type)
+    # TODO: Replace this static stub with your parser or OCR processor.
+    text = f"static extracted text for {input_data.file_path} as {input_data.file_type}"
+    result = ConvertToTextOutput(text=text, page_count=1)
+    logger.info("activity.complete", activity="convert_to_text", page_count=result.page_count)
+    return result
 
 
 @activity.defn
 async def save_converted_text(input_data: SaveConvertedTextInput) -> SaveConvertedTextOutput:
-    # TODO: Replace the static return below with the real processor implementation.
-    # Example real logic: sniff MIME type, convert to text, save to DB/shared FS/S3, etc.
-    activity.logger.info("running activity", extra={"activity": "save_converted_text"})
-    return SaveConvertedTextOutput(saved_to="s3://demo-bucket/static-output.txt", record_id="record-123")
-
-
+    logger.info("activity.start", activity="save_converted_text", file_path=input_data.file_path, storage_type=getattr(input_data.storage_type, 'value', str(input_data.storage_type)))
+    # TODO: Replace this static stub with DB, shared filesystem, or S3 persistence code.
+    storage = getattr(input_data.storage_type, "value", str(input_data.storage_type))
+    if storage == "s3":
+        saved_to = "s3://demo-bucket/converted/output.txt"
+    elif storage == "database":
+        saved_to = "database://document_ingest/records/record-123"
+    else:
+        saved_to = "/shared/output/converted-output.txt"
+    result = SaveConvertedTextOutput(saved_to=saved_to, record_id="record-123")
+    logger.info("activity.complete", activity="save_converted_text", saved_to=result.saved_to)
+    return result

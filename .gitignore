@@ -137,5 +137,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-builder/generated/document_ingest/__pycache__
+
 .DS_Store
+
+__pycache__/

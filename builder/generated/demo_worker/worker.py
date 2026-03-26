@@ -9,7 +9,7 @@ from temporalio.worker import Worker
 
 import activities
 from logging_config import configure_logging, get_logger
-from workflows import DocumentIngestWorkflow
+from workflows import *
 
 load_dotenv()
 configure_logging()
@@ -20,18 +20,19 @@ async def main() -> None:
     target = os.getenv("TEMPORAL_TARGET", "localhost:7233")
     namespace = os.getenv("TEMPORAL_NAMESPACE", "default")
     client = await Client.connect(target, namespace=namespace)
-    logger.info("worker.start", target=target, namespace=namespace, task_queue="document-ingest-queue")
+    logger.info("worker.start", task_queue="my-workflow-project-queue", target=target, namespace=namespace)
     worker = Worker(
         client,
-        task_queue="document-ingest-queue",
-        workflows=[DocumentIngestWorkflow],
-        activities=[
-            activities.determine_file_type,
-            activities.convert_to_text,
-            activities.save_converted_text,
+        task_queue="my-workflow-project-queue",
+        workflows=[
+            my_workflow_project_main_workflow,
         ],
-        max_concurrent_activities=100,
-        max_concurrent_workflow_tasks=100,
+        activities=[
+            activities.review_document,
+            activities.fill_template,
+        ],
+        max_concurrent_activities=200,
+        max_concurrent_workflow_tasks=200,
     )
     await worker.run()
 

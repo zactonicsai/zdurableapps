@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 
 class FileStorageType(str, Enum):
@@ -60,5 +59,3 @@ class DocumentIngestResult:
     text_preview: str
     saved_to: str
     record_id: str
-
-

@@ -7,6 +7,17 @@ This folder was generated from the schema and includes:
 - dynamic requirements.txt generation based on schema features
 - Dockerfile and docker-compose.yml for local development
 
+## Files
+- models.py
+- logging_config.py
+- activities.py
+- workflows.py
+- worker.py
+- client.py
+- requirements.txt
+- Dockerfile
+- docker-compose.yml
+
 ## Local run
 
     python3 -m venv .venv
@@ -24,3 +35,9 @@ In another terminal:
 
 Temporal gRPC: localhost:7233
 Temporal Web UI: http://localhost:8233
+
+## Generated workflow
+The sample client starts my_workflow_project_main_workflow with static sample input.
+
+## Notes
+Each activity contains a TODO comment showing where to add your real processor implementation.
