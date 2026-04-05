@@ -4,7 +4,18 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Temporal Builder — Tutorial</title>
-<script src="theme.js"></script>
+<script>
+(function(){
+  var saved = localStorage.getItem('theme');
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme(){
+  var current = document.documentElement.getAttribute('data-theme');
+  var next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Overpass+Mono:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -18,7 +29,7 @@
   --serif:'Instrument Serif',Georgia,serif;--sans:'Source Sans 3',sans-serif;--mono:'Overpass Mono',monospace;
 }
 [data-theme="light"] {
-  --bg:247 248 250;--bg-card:255 255 255;--bg-raised:241 243 248;--bg-code:245 246 250;
+  --bg:255 255 255;--bg-card:249 250 252;--bg-raised:243 244 248;--bg-code:245 246 250;
   --border:218 222 232;--accent:67 97 238;--accent2:130 90 220;
   --green:16 163 120;--amber:192 130 0;--red:220 60 60;
   --text:30 35 50;--dim:100 110 130;--muted:160 168 182;
@@ -241,10 +252,6 @@ tailwind.config = { theme: { extend: {
       <p class="text-dim mb-8 max-w-2xl">Start the application with Docker Compose. The UI runs on port 3000 and the API on port 8000.</p>
 
       <div class="code-block mono mb-8">
-        <a href="https://temporal-build-flows.vercel.app" target="_blank">
-          <span class="fn">Website Running App</span>
-          <span class="str">https://temporal-build-flows.vercel.app</span>
-        </a>
         <span class="cm"># Clone and start</span><br/>
         <span class="fn">unzip</span> temporal-builder.zip<br/>
         <span class="fn">cd</span> temporal-builder<br/>
