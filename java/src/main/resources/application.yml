@@ -1,0 +1,28 @@
+# ─── Server ──────────────────────────────────────────────
+server:
+  port: 8080
+
+# ─── Temporal ────────────────────────────────────────────
+temporal:
+  target: localhost:7233
+  namespace: default
+  enable-https: false
+
+# ─── SpringDoc / Swagger UI ─────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+  info:
+    title: Temporal Workflow API
+    version: 1.0.0
+    description: REST API for starting and managing Temporal workflows
+
+# ─── Logging ────────────────────────────────────────────
+logging:
+  level:
+    com.workflow: DEBUG
+    io.temporal: INFO

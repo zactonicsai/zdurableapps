@@ -1,0 +1,9 @@
+# Test configuration – Temporal beans are mocked in @WebMvcTest slices
+temporal:
+  target: localhost:7233
+  namespace: test
+  enable-https: false
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
