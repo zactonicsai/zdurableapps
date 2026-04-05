@@ -1,45 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Temporal Builder — Tutorial</title>
+<script src="theme.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Overpass+Mono:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-:root {
-  --bg:        #0a0c10;
-  --bg-card:   #11141b;
-  --bg-raised: #181c26;
-  --bg-code:   #0d1017;
-  --border:    #1f2535;
-  --accent:    #4f6ef7;
-  --accent2:   #a78bfa;
-  --green:     #34d399;
-  --amber:     #fbbf24;
-  --red:       #f87171;
-  --text:      #dce4f0;
-  --dim:       #7f8da4;
-  --muted:     #4a5568;
-  --serif:     'Instrument Serif', Georgia, serif;
-  --sans:      'Source Sans 3', sans-serif;
-  --mono:      'Overpass Mono', monospace;
+:root, [data-theme="dark"] {
+  --bg:12 14 19;--bg-card:17 20 27;--bg-raised:24 28 38;--bg-code:13 16 23;
+  --border:31 37 53;--accent:79 110 247;--accent2:167 139 250;
+  --green:52 211 153;--amber:251 191 36;--red:248 113 113;
+  --text:220 228 240;--dim:127 141 164;--muted:74 85 104;
+  --shadow:0,0,0;
+  --serif:'Instrument Serif',Georgia,serif;--sans:'Source Sans 3',sans-serif;--mono:'Overpass Mono',monospace;
+}
+[data-theme="light"] {
+  --bg:247 248 250;--bg-card:255 255 255;--bg-raised:241 243 248;--bg-code:245 246 250;
+  --border:218 222 232;--accent:67 97 238;--accent2:130 90 220;
+  --green:16 163 120;--amber:192 130 0;--red:220 60 60;
+  --text:30 35 50;--dim:100 110 130;--muted:160 168 182;
+  --shadow:0,0,0;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+body { font-family: var(--sans); background: rgb(var(--bg)); color: rgb(var(--text)); line-height: 1.7; transition: background .3s, color .3s; }
 code, .mono { font-family: var(--mono); font-size: .88em; }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 3px; }
 
 /* Hero grain overlay */
 .grain {
   position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: .035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
+[data-theme="light"] .grain { opacity: .018; }
 
 /* Animations */
 @keyframes fade-up { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
@@ -59,22 +58,22 @@ code, .mono { font-family: var(--mono); font-size: .88em; }
 
 /* Step progress sidebar */
 .step-dot { transition: all .3s; }
-.step-dot.active { background: var(--accent); box-shadow: 0 0 12px rgba(79,110,247,.5); }
-.step-dot.done { background: var(--green); }
+.step-dot.active { background: rgb(var(--accent)); box-shadow: 0 0 12px rgba(79,110,247,.5); }
+.step-dot.done { background: rgb(var(--green)); }
 .step-line { transition: background .5s; }
 
 /* Step cards */
 .step-card { transition: border-color .3s, box-shadow .3s; }
-.step-card.current { border-color: var(--accent); box-shadow: 0 0 40px -10px rgba(79,110,247,.15); }
+.step-card.current { border-color: rgb(var(--accent)); box-shadow: 0 0 40px -10px rgba(79,110,247,.15); }
 
 /* Mockup elements */
-.mockup-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.mockup-titlebar { background: var(--bg-raised); padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); }
+.mockup-window { background: rgb(var(--bg-card)); border: 1px solid rgb(var(--border)); border-radius: 10px; overflow: hidden; }
+.mockup-titlebar { background: rgb(var(--bg-raised)); padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgb(var(--border)); }
 .mockup-dot { width: 8px; height: 8px; border-radius: 50%; }
 
 /* Code blocks */
 .code-block {
-  background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+  background: rgb(var(--bg-code)); border: 1px solid rgb(var(--border)); border-radius: 8px;
   padding: 16px 20px; overflow-x: auto; font-size: .82rem; line-height: 1.65;
 }
 .code-block .kw { color: #c792ea; }
@@ -85,22 +84,42 @@ code, .mono { font-family: var(--mono); font-size: .88em; }
 .code-block .op { color: #89ddff; }
 .code-block .type { color: #ffcb6b; }
 
+[data-theme="light"] .code-block .kw { color: #7c3aed; }
+[data-theme="light"] .code-block .fn { color: #2563eb; }
+[data-theme="light"] .code-block .str { color: #16a34a; }
+[data-theme="light"] .code-block .cm { color: #94a3b8; font-style: italic; }
+[data-theme="light"] .code-block .num { color: #c2410c; }
+[data-theme="light"] .code-block .op { color: #0891b2; }
+[data-theme="light"] .code-block .type { color: #b45309; }
+
 /* Tip callouts */
-.tip-box { border-left: 3px solid var(--green); background: rgba(52,211,153,.04); }
-.warn-box { border-left: 3px solid var(--amber); background: rgba(251,191,36,.04); }
-.info-box { border-left: 3px solid var(--accent); background: rgba(79,110,247,.04); }
+.tip-box { border-left: 3px solid rgb(var(--green)); background: rgba(52,211,153,.04); }
+.warn-box { border-left: 3px solid rgb(var(--amber)); background: rgba(251,191,36,.04); }
+.info-box { border-left: 3px solid rgb(var(--accent)); background: rgba(79,110,247,.04); }
 
 /* Nav pill */
 .nav-pill { transition: all .2s; }
-.nav-pill:hover { background: var(--bg-raised); color: var(--text); }
-.nav-pill.active { background: var(--accent); color: white; }
+.nav-pill:hover { background: rgb(var(--bg-raised)); color: rgb(var(--text)); }
+.nav-pill.active { background: rgb(var(--accent)); color: white; }
 
 /* Floating badge */
 .float-badge { animation: float 3s ease-in-out infinite; }
+/* Theme toggle — icons driven by CSS, not JS */
+.theme-toggle{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgb(var(--border));background:rgb(var(--bg-raised));color:rgb(var(--dim));transition:all .2s}.theme-toggle:hover{border-color:rgb(var(--accent));color:rgb(var(--accent))}
+.theme-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+[data-theme="dark"] .theme-icon-sun{display:block}[data-theme="dark"] .theme-icon-moon{display:none}
+[data-theme="light"] .theme-icon-sun{display:none}[data-theme="light"] .theme-icon-moon{display:block}
 </style>
 <script>
 tailwind.config = { theme: { extend: {
-  colors: { bg:'#0a0c10', card:'#11141b', raised:'#181c26', bdr:'#1f2535', accent:'#4f6ef7', accent2:'#a78bfa', agreen:'#34d399', aamber:'#fbbf24', ared:'#f87171', dim:'#7f8da4', muted:'#4a5568' },
+  colors: {
+    bg:'rgb(var(--bg) / <alpha-value>)', card:'rgb(var(--bg-card) / <alpha-value>)',
+    raised:'rgb(var(--bg-raised) / <alpha-value>)', bdr:'rgb(var(--border) / <alpha-value>)',
+    accent:'rgb(var(--accent) / <alpha-value>)', accent2:'rgb(var(--accent2) / <alpha-value>)',
+    agreen:'rgb(var(--green) / <alpha-value>)', aamber:'rgb(var(--amber) / <alpha-value>)',
+    ared:'rgb(var(--red) / <alpha-value>)', dim:'rgb(var(--dim) / <alpha-value>)',
+    muted:'rgb(var(--muted) / <alpha-value>)', text:'rgb(var(--text) / <alpha-value>)',
+  },
   fontFamily: { serif:['Instrument Serif','Georgia','serif'], sans:['Source Sans 3','sans-serif'], mono:['Overpass Mono','monospace'] }
 }}}
 </script>
@@ -128,6 +147,9 @@ tailwind.config = { theme: { extend: {
       <a href="#step-4" class="nav-pill px-3 py-1 rounded-full text-xs text-dim">Workers</a>
       <a href="#step-5" class="nav-pill px-3 py-1 rounded-full text-xs text-dim">Clients</a>
       <a href="#step-6" class="nav-pill px-3 py-1 rounded-full text-xs text-dim">Generate</a>
+      <a href="#schema" class="nav-pill px-3 py-1 rounded-full text-xs text-dim">Schema</a>
+      <a href="#ai-workflow" class="nav-pill px-3 py-1 rounded-full text-xs text-dim">AI Example</a>
+      <button onclick="toggleTheme()" class="theme-toggle ml-2" title="Toggle dark/light"><svg class="theme-icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><svg class="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     </div>
   </div>
 </nav>
@@ -219,6 +241,10 @@ tailwind.config = { theme: { extend: {
       <p class="text-dim mb-8 max-w-2xl">Start the application with Docker Compose. The UI runs on port 3000 and the API on port 8000.</p>
 
       <div class="code-block mono mb-8">
+        <a href="https://temporal-build-flows.vercel.app" target="_blank">
+          <span class="fn">Website Running App</span>
+          <span class="str">https://temporal-build-flows.vercel.app</span>
+        </a>
         <span class="cm"># Clone and start</span><br/>
         <span class="fn">unzip</span> temporal-builder.zip<br/>
         <span class="fn">cd</span> temporal-builder<br/>
@@ -636,6 +662,421 @@ tailwind.config = { theme: { extend: {
       </div>
     </div>
   </article>
+
+  <!-- ─── SCHEMA REFERENCE ─── -->
+  <article id="schema" class="step-section py-20 border-t border-bdr">
+    <div class="reveal">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="px-2.5 py-1 rounded-lg bg-accent2/10 text-accent2 text-xs font-semibold font-mono">TIDS v1.0</span>
+      </div>
+      <h2 class="font-serif text-3xl md:text-4xl mb-4">Schema Reference</h2>
+      <p class="text-dim mb-10 max-w-2xl">The Temporal Interface Definition Schema (TIDS) is the YAML format that defines your entire Temporal application. Here's every top-level key and what it controls.</p>
+
+      <!-- Schema map -->
+      <div class="grid md:grid-cols-2 gap-4 mb-10">
+        <div class="p-5 rounded-xl bg-card border border-bdr">
+          <h4 class="text-sm font-semibold mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-accent"></span>Required Sections</h4>
+          <div class="space-y-3 text-sm">
+            <div><code class="text-accent font-mono font-semibold">metadata</code><span class="text-dim ml-2">— Project name, namespace, default task queue, target language</span></div>
+            <div><code class="text-accent font-mono font-semibold">activities</code><span class="text-dim ml-2">— Activity definitions with sync/async mode, I/O types, timeouts, retries</span></div>
+            <div><code class="text-accent font-mono font-semibold">workflows</code><span class="text-dim ml-2">— Workflow orchestrations with steps, signals, queries, updates</span></div>
+            <div><code class="text-accent font-mono font-semibold">workers</code><span class="text-dim ml-2">— Worker processes with task queues, concurrency, resource limits</span></div>
+            <div><code class="text-accent font-mono font-semibold">clients</code><span class="text-dim ml-2">— Client configs with TLS, allowed workflows, connection targets</span></div>
+          </div>
+        </div>
+        <div class="p-5 rounded-xl bg-card border border-bdr">
+          <h4 class="text-sm font-semibold mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>Optional Sections</h4>
+          <div class="space-y-3 text-sm">
+            <div><code class="text-dim font-mono font-semibold">types</code><span class="text-dim ml-2">— Reusable structs, enums, and aliases for I/O contracts</span></div>
+            <div><code class="text-dim font-mono font-semibold">retry_policies</code><span class="text-dim ml-2">— Named retry presets (backoff, max attempts, non-retryable errors)</span></div>
+            <div><code class="text-dim font-mono font-semibold">signals</code><span class="text-dim ml-2">— Signal definitions reusable across workflows</span></div>
+            <div><code class="text-dim font-mono font-semibold">queries</code><span class="text-dim ml-2">— Query definitions for reading workflow state</span></div>
+            <div><code class="text-dim font-mono font-semibold">updates</code><span class="text-dim ml-2">— Update handlers with optional validators</span></div>
+            <div><code class="text-dim font-mono font-semibold">pipelines</code><span class="text-dim ml-2">— Multi-workflow orchestration with stages and fan-out</span></div>
+            <div><code class="text-dim font-mono font-semibold">observability</code><span class="text-dim ml-2">— Metrics, tracing, and logging configuration</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key patterns -->
+      <h3 class="font-serif text-xl mb-4">Key Schema Patterns</h3>
+      <div class="grid md:grid-cols-3 gap-4 mb-10">
+        <div class="p-4 rounded-lg bg-card border border-bdr">
+          <h5 class="text-xs font-semibold text-accent mb-2">Activity I/O Contract</h5>
+          <div class="code-block mono text-[11px] leading-relaxed">
+            <span class="cm"># Each activity declares its</span><br>
+            <span class="cm"># typed input and output</span><br>
+            <span class="kw">input</span><span class="op">:</span><br>
+            &nbsp;&nbsp;<span class="kw">type</span><span class="op">:</span> <span class="type">DocumentInput</span><br>
+            <span class="kw">output</span><span class="op">:</span><br>
+            &nbsp;&nbsp;<span class="kw">type</span><span class="op">:</span> <span class="type">ExtractedText</span>
+          </div>
+        </div>
+        <div class="p-4 rounded-lg bg-card border border-bdr">
+          <h5 class="text-xs font-semibold text-agreen mb-2">Workflow Step Graph</h5>
+          <div class="code-block mono text-[11px] leading-relaxed">
+            <span class="cm"># Steps form a DAG with</span><br>
+            <span class="cm"># depends_on edges</span><br>
+            <span class="kw">steps</span><span class="op">:</span><br>
+            &nbsp;&nbsp;- <span class="kw">id</span><span class="op">:</span> extract<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">kind</span><span class="op">:</span> activity<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">depends_on</span><span class="op">:</span> [upload]
+          </div>
+        </div>
+        <div class="p-4 rounded-lg bg-card border border-bdr">
+          <h5 class="text-xs font-semibold text-aamber mb-2">Error Handling</h5>
+          <div class="code-block mono text-[11px] leading-relaxed">
+            <span class="cm"># Per-step error strategy</span><br>
+            <span class="kw">on_error</span><span class="op">:</span><br>
+            &nbsp;&nbsp;<span class="kw">strategy</span><span class="op">:</span> fallback<br>
+            &nbsp;&nbsp;<span class="kw">fallback_step</span><span class="op">:</span> compensate<br>
+            &nbsp;&nbsp;<span class="kw">max_retries</span><span class="op">:</span> <span class="num">3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type expressions -->
+      <h3 class="font-serif text-xl mb-4">Type Expression Syntax</h3>
+      <p class="text-sm text-dim mb-4">Types used in <code>input.type</code>, <code>output.type</code>, and <code>fields[].type</code> follow this grammar:</p>
+      <div class="code-block mono max-w-xl mb-10 text-[11px] leading-relaxed">
+        <span class="type">type_expr</span> = <span class="str">primitive</span> | <span class="str">reference</span> | <span class="str">generic</span><br>
+        <span class="type">primitive</span>&nbsp; = <span class="str">"string"</span> | <span class="str">"int"</span> | <span class="str">"float"</span> | <span class="str">"bool"</span> | <span class="str">"datetime"</span> | <span class="str">"duration"</span><br>
+        <span class="type">reference</span> = <span class="str">PascalCaseName</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># refers to a types entry</span><br>
+        <span class="type">generic</span>&nbsp;&nbsp; = <span class="str">"list&lt;"</span> type <span class="str">"&gt;"</span> | <span class="str">"map&lt;"</span> type <span class="str">","</span> type <span class="str">"&gt;"</span> | <span class="str">"optional&lt;"</span> type <span class="str">"&gt;"</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── AI WORKFLOW EXAMPLE: Manual Schema Creation ─── -->
+  <article id="ai-workflow" class="step-section py-20 border-t border-bdr">
+    <div class="reveal">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="px-2.5 py-1 rounded-lg bg-agreen/10 text-agreen text-xs font-semibold font-mono">EXAMPLE</span>
+      </div>
+      <h2 class="font-serif text-3xl md:text-4xl mb-4">Manual Schema: AI Document Pipeline</h2>
+      <p class="text-dim mb-6 max-w-3xl">Let's write a complete YAML schema by hand for a real-world AI workflow: a document-processing pipeline that uploads documents, extracts text, stores embeddings in a vector database, and serves an LLM-powered chat agent — with Temporal orchestrating every step.</p>
+
+      <div class="info-box rounded-lg p-4 mb-10">
+        <p class="text-sm"><strong class="text-accent">Two workflows in this example:</strong> (1) A <strong>document ingestion pipeline</strong> that processes uploaded files into a searchable context database, and (2) a <strong>chat agent session</strong> where each user message triggers a Temporal workflow that retrieves context and calls the LLM.</p>
+      </div>
+
+      <!-- Architecture diagram -->
+      <h3 class="font-serif text-xl mb-4">Architecture Overview</h3>
+      <div class="flex flex-wrap items-center justify-center gap-3 mb-10 p-6 rounded-xl bg-card border border-bdr">
+        <!-- Ingestion flow -->
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-raised border border-bdr text-xs font-mono">Upload Doc</div>
+          <div class="text-[10px] text-muted mt-1">PDF / DOCX</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-agreen/10 border border-agreen/20 text-xs font-mono text-agreen">Extract Text</div>
+          <div class="text-[10px] text-muted mt-1">sync activity</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-agreen/10 border border-agreen/20 text-xs font-mono text-agreen">Chunk + Embed</div>
+          <div class="text-[10px] text-muted mt-1">sync activity</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-aamber/10 border border-aamber/20 text-xs font-mono text-aamber">Store in VectorDB</div>
+          <div class="text-[10px] text-muted mt-1">async activity</div>
+        </div>
+
+        <div class="w-full"></div>
+        <div class="w-full border-t border-bdr my-2"></div>
+
+        <!-- Chat flow -->
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-raised border border-bdr text-xs font-mono">User Message</div>
+          <div class="text-[10px] text-muted mt-1">chat input</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-xs font-mono text-accent">Retrieve Context</div>
+          <div class="text-[10px] text-muted mt-1">vector search</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-aamber/10 border border-aamber/20 text-xs font-mono text-aamber">Call LLM</div>
+          <div class="text-[10px] text-muted mt-1">async + heartbeat</div>
+        </div>
+        <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="text-center">
+          <div class="px-4 py-2 rounded-lg bg-raised border border-bdr text-xs font-mono">Response</div>
+          <div class="text-[10px] text-muted mt-1">streamed back</div>
+        </div>
+      </div>
+
+      <!-- Step A: metadata + types -->
+      <h3 class="font-serif text-xl mb-3">A. Metadata &amp; Types</h3>
+      <p class="text-sm text-dim mb-4">Start every schema with the version, project metadata, and the data structures your activities will pass around.</p>
+      <div class="code-block mono text-[11px] leading-relaxed mb-8">
+<span class="kw">schema_version</span><span class="op">:</span> <span class="str">"1.0.0"</span>
+
+<span class="kw">metadata</span><span class="op">:</span>
+  <span class="kw">name</span><span class="op">:</span> AIDocumentPipeline
+  <span class="kw">namespace</span><span class="op">:</span> ai-prod
+  <span class="kw">default_task_queue</span><span class="op">:</span> ai-pipeline
+  <span class="kw">language</span><span class="op">:</span> [python]
+
+<span class="kw">types</span><span class="op">:</span>
+  - <span class="kw">name</span><span class="op">:</span> <span class="type">DocumentInput</span>
+    <span class="kw">kind</span><span class="op">:</span> struct
+    <span class="kw">fields</span><span class="op">:</span>
+      - {<span class="kw">name</span><span class="op">:</span> doc_id, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> file_url, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> mime_type, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> user_id, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> <span class="type">ExtractedText</span>
+    <span class="kw">kind</span><span class="op">:</span> struct
+    <span class="kw">fields</span><span class="op">:</span>
+      - {<span class="kw">name</span><span class="op">:</span> doc_id, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> text, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> page_count, <span class="kw">type</span><span class="op">:</span> int, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> <span class="type">EmbeddingResult</span>
+    <span class="kw">kind</span><span class="op">:</span> struct
+    <span class="kw">fields</span><span class="op">:</span>
+      - {<span class="kw">name</span><span class="op">:</span> doc_id, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> chunk_count, <span class="kw">type</span><span class="op">:</span> int, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> collection_name, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> <span class="type">ChatMessage</span>
+    <span class="kw">kind</span><span class="op">:</span> struct
+    <span class="kw">fields</span><span class="op">:</span>
+      - {<span class="kw">name</span><span class="op">:</span> session_id, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> user_message, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> collection_name, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> <span class="type">LLMResponse</span>
+    <span class="kw">kind</span><span class="op">:</span> struct
+    <span class="kw">fields</span><span class="op">:</span>
+      - {<span class="kw">name</span><span class="op">:</span> response_text, <span class="kw">type</span><span class="op">:</span> string, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> tokens_used, <span class="kw">type</span><span class="op">:</span> int, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      - {<span class="kw">name</span><span class="op">:</span> context_chunks, <span class="kw">type</span><span class="op">:</span> int, <span class="kw">required</span><span class="op">:</span> <span class="num">true</span>}
+      </div>
+
+      <!-- Step B: activities -->
+      <h3 class="font-serif text-xl mb-3">B. Activities — The Building Blocks</h3>
+      <p class="text-sm text-dim mb-4">Each activity is a single unit of work. Notice the two modes: <strong class="text-agreen">sync</strong> for fast operations and <strong class="text-aamber">async</strong> for LLM/DB calls that need heartbeats.</p>
+      <div class="code-block mono text-[11px] leading-relaxed mb-4">
+<span class="kw">retry_policies</span><span class="op">:</span>
+  - <span class="kw">name</span><span class="op">:</span> standard
+    <span class="kw">initial_interval</span><span class="op">:</span> <span class="str">"1s"</span>
+    <span class="kw">backoff_coefficient</span><span class="op">:</span> <span class="num">2.0</span>
+    <span class="kw">max_interval</span><span class="op">:</span> <span class="str">"30s"</span>
+    <span class="kw">max_attempts</span><span class="op">:</span> <span class="num">5</span>
+  - <span class="kw">name</span><span class="op">:</span> llm-retry
+    <span class="kw">initial_interval</span><span class="op">:</span> <span class="str">"2s"</span>
+    <span class="kw">backoff_coefficient</span><span class="op">:</span> <span class="num">1.5</span>
+    <span class="kw">max_interval</span><span class="op">:</span> <span class="str">"15s"</span>
+    <span class="kw">max_attempts</span><span class="op">:</span> <span class="num">3</span>
+    <span class="kw">non_retryable_error_types</span><span class="op">:</span> [ContentFilterError]
+
+<span class="kw">activities</span><span class="op">:</span>
+  <span class="cm"># ── Document Ingestion Activities ──</span>
+  - <span class="kw">name</span><span class="op">:</span> extract_text           <span class="cm"># PDF/DOCX → plain text</span>
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">sync</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">DocumentInput</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> <span class="type">ExtractedText</span>}
+    <span class="kw">start_to_close_timeout</span><span class="op">:</span> <span class="str">"2m"</span>
+    <span class="kw">retry_policy</span><span class="op">:</span> standard
+
+  - <span class="kw">name</span><span class="op">:</span> chunk_and_embed        <span class="cm"># Split text → generate embeddings</span>
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">sync</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">ExtractedText</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> <span class="type">EmbeddingResult</span>}
+    <span class="kw">start_to_close_timeout</span><span class="op">:</span> <span class="str">"5m"</span>
+    <span class="kw">retry_policy</span><span class="op">:</span> standard
+
+  - <span class="kw">name</span><span class="op">:</span> store_in_vectordb     <span class="cm"># Write embeddings to Pinecone/Chroma</span>
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">async</span>                 <span class="cm"># Heartbeats during bulk upsert</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">EmbeddingResult</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> bool}
+    <span class="kw">start_to_close_timeout</span><span class="op">:</span> <span class="str">"10m"</span>
+    <span class="kw">heartbeat_timeout</span><span class="op">:</span> <span class="str">"30s"</span>
+    <span class="kw">retry_policy</span><span class="op">:</span> standard
+
+  <span class="cm"># ── Chat / Agent Activities ──</span>
+  - <span class="kw">name</span><span class="op">:</span> retrieve_context      <span class="cm"># Vector similarity search</span>
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">sync</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">ChatMessage</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> string}       <span class="cm"># Concatenated context chunks</span>
+    <span class="kw">start_to_close_timeout</span><span class="op">:</span> <span class="str">"15s"</span>
+    <span class="kw">retry_policy</span><span class="op">:</span> standard
+
+  - <span class="kw">name</span><span class="op">:</span> call_llm              <span class="cm"># Send prompt + context to LLM API</span>
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">async</span>                 <span class="cm"># Heartbeats while streaming tokens</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> string}       <span class="cm"># Assembled prompt</span>
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> <span class="type">LLMResponse</span>}
+    <span class="kw">start_to_close_timeout</span><span class="op">:</span> <span class="str">"2m"</span>
+    <span class="kw">heartbeat_timeout</span><span class="op">:</span> <span class="str">"20s"</span>
+    <span class="kw">retry_policy</span><span class="op">:</span> llm-retry
+    <span class="kw">task_queue</span><span class="op">:</span> llm-inference     <span class="cm"># Dedicated GPU-backed queue</span>
+      </div>
+
+      <div class="tip-box rounded-lg p-4 mb-8">
+        <p class="text-sm"><strong class="text-agreen">Why async for LLM calls?</strong> LLM inference can take 10-60+ seconds. The async mode tells the generator to wire heartbeat scaffolding — the activity reports <code>activity.heartbeat("streaming...")</code> as tokens arrive. If the worker crashes mid-stream, Temporal detects the missing heartbeat and retries on another worker.</p>
+      </div>
+
+      <!-- Step C: workflows -->
+      <h3 class="font-serif text-xl mb-3">C. Workflows — Orchestrating the Pipeline</h3>
+      <p class="text-sm text-dim mb-4">Two workflows: one for ingestion (async, fire-and-forget), one for each chat turn (sync, blocks until response).</p>
+      <div class="code-block mono text-[11px] leading-relaxed mb-4">
+<span class="kw">workflows</span><span class="op">:</span>
+  <span class="cm"># ── Pipeline: Document → Text → Embeddings → VectorDB ──</span>
+  - <span class="kw">name</span><span class="op">:</span> IngestDocument
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">async</span>               <span class="cm"># Fire-and-forget from upload API</span>
+    <span class="kw">id_pattern</span><span class="op">:</span> <span class="str">"ingest-{{input.doc_id}}"</span>
+    <span class="kw">id_reuse_policy</span><span class="op">:</span> reject_duplicate
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">DocumentInput</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> <span class="type">EmbeddingResult</span>}
+    <span class="kw">execution_timeout</span><span class="op">:</span> <span class="str">"30m"</span>
+    <span class="kw">steps</span><span class="op">:</span>
+      - <span class="kw">id</span><span class="op">:</span> extract
+        <span class="kw">kind</span><span class="op">:</span> activity
+        <span class="kw">activity</span><span class="op">:</span> extract_text
+        <span class="kw">output_var</span><span class="op">:</span> extracted
+      - <span class="kw">id</span><span class="op">:</span> embed
+        <span class="kw">kind</span><span class="op">:</span> activity
+        <span class="kw">activity</span><span class="op">:</span> chunk_and_embed
+        <span class="kw">output_var</span><span class="op">:</span> embeddings
+        <span class="kw">depends_on</span><span class="op">:</span> [extract]
+      - <span class="kw">id</span><span class="op">:</span> store
+        <span class="kw">kind</span><span class="op">:</span> activity
+        <span class="kw">activity</span><span class="op">:</span> store_in_vectordb
+        <span class="kw">output_var</span><span class="op">:</span> stored
+        <span class="kw">depends_on</span><span class="op">:</span> [embed]
+        <span class="kw">on_error</span><span class="op">:</span>
+          <span class="kw">strategy</span><span class="op">:</span> retry
+          <span class="kw">max_retries</span><span class="op">:</span> <span class="num">3</span>
+
+  <span class="cm"># ── Agent: Each chat message = one workflow execution ──</span>
+  - <span class="kw">name</span><span class="op">:</span> ChatTurn
+    <span class="kw">mode</span><span class="op">:</span> <span class="str">sync</span>                <span class="cm"># API gateway blocks until LLM responds</span>
+    <span class="kw">id_pattern</span><span class="op">:</span> <span class="str">"chat-{{input.session_id}}-{{uuid}}"</span>
+    <span class="kw">input</span><span class="op">:</span>  {<span class="kw">type</span><span class="op">:</span> <span class="type">ChatMessage</span>}
+    <span class="kw">output</span><span class="op">:</span> {<span class="kw">type</span><span class="op">:</span> <span class="type">LLMResponse</span>}
+    <span class="kw">execution_timeout</span><span class="op">:</span> <span class="str">"3m"</span>
+    <span class="kw">steps</span><span class="op">:</span>
+      - <span class="kw">id</span><span class="op">:</span> context
+        <span class="kw">kind</span><span class="op">:</span> activity
+        <span class="kw">activity</span><span class="op">:</span> retrieve_context
+        <span class="kw">output_var</span><span class="op">:</span> context_text
+      - <span class="kw">id</span><span class="op">:</span> llm
+        <span class="kw">kind</span><span class="op">:</span> activity
+        <span class="kw">activity</span><span class="op">:</span> call_llm
+        <span class="kw">output_var</span><span class="op">:</span> response
+        <span class="kw">depends_on</span><span class="op">:</span> [context]
+        <span class="kw">on_error</span><span class="op">:</span>
+          <span class="kw">strategy</span><span class="op">:</span> fallback
+          <span class="kw">fallback_step</span><span class="op">:</span> fallback_response
+
+      <span class="cm"># Fallback: return a graceful error if LLM fails</span>
+      - <span class="kw">id</span><span class="op">:</span> fallback_response
+        <span class="kw">kind</span><span class="op">:</span> local_activity
+        <span class="kw">local_activity_fn</span><span class="op">:</span> return_error_message
+        <span class="kw">output_var</span><span class="op">:</span> response
+      </div>
+
+      <div class="warn-box rounded-lg p-4 mb-8">
+        <p class="text-sm"><strong class="text-aamber">Chat turn as sync workflow:</strong> The API gateway calls <code>execute_workflow(ChatTurn, ...)</code> which blocks until the LLM responds. This gives you Temporal's full retry/timeout guarantees on every single chat message — if the LLM worker crashes mid-response, it retries automatically. The user just sees a slightly delayed reply, never a broken connection.</p>
+      </div>
+
+      <!-- Step D: workers + clients -->
+      <h3 class="font-serif text-xl mb-3">D. Workers &amp; Clients</h3>
+      <p class="text-sm text-dim mb-4">Separate workers for CPU-bound text extraction, GPU-bound LLM inference, and the API client.</p>
+      <div class="code-block mono text-[11px] leading-relaxed mb-4">
+<span class="kw">workers</span><span class="op">:</span>
+  - <span class="kw">name</span><span class="op">:</span> ingestion-worker
+    <span class="kw">task_queue</span><span class="op">:</span> ai-pipeline
+    <span class="kw">activities</span><span class="op">:</span> [extract_text, chunk_and_embed, store_in_vectordb]
+    <span class="kw">workflows</span><span class="op">:</span>  [IngestDocument]
+    <span class="kw">max_concurrent_activities</span><span class="op">:</span> <span class="num">10</span>
+    <span class="kw">runtime</span><span class="op">:</span> {<span class="kw">replicas</span><span class="op">:</span> <span class="num">2</span>, <span class="kw">cpu</span><span class="op">:</span> <span class="str">"2"</span>, <span class="kw">memory</span><span class="op">:</span> <span class="str">"4Gi"</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> llm-worker
+    <span class="kw">task_queue</span><span class="op">:</span> llm-inference        <span class="cm"># Matches call_llm.task_queue</span>
+    <span class="kw">activities</span><span class="op">:</span> [call_llm]
+    <span class="kw">workflows</span><span class="op">:</span>  []                   <span class="cm"># Activities only — no workflows</span>
+    <span class="kw">max_concurrent_activities</span><span class="op">:</span> <span class="num">4</span>    <span class="cm"># Limited by GPU memory</span>
+    <span class="kw">runtime</span><span class="op">:</span> {<span class="kw">replicas</span><span class="op">:</span> <span class="num">1</span>, <span class="kw">cpu</span><span class="op">:</span> <span class="str">"4"</span>, <span class="kw">memory</span><span class="op">:</span> <span class="str">"16Gi"</span>}
+
+  - <span class="kw">name</span><span class="op">:</span> chat-worker
+    <span class="kw">task_queue</span><span class="op">:</span> ai-pipeline
+    <span class="kw">activities</span><span class="op">:</span> [retrieve_context]
+    <span class="kw">workflows</span><span class="op">:</span>  [ChatTurn]
+    <span class="kw">max_concurrent_activities</span><span class="op">:</span> <span class="num">100</span>
+    <span class="kw">max_concurrent_workflow_tasks</span><span class="op">:</span> <span class="num">200</span>
+    <span class="kw">runtime</span><span class="op">:</span> {<span class="kw">replicas</span><span class="op">:</span> <span class="num">3</span>, <span class="kw">cpu</span><span class="op">:</span> <span class="str">"1"</span>, <span class="kw">memory</span><span class="op">:</span> <span class="str">"1Gi"</span>}
+
+<span class="kw">clients</span><span class="op">:</span>
+  - <span class="kw">name</span><span class="op">:</span> api-gateway
+    <span class="kw">target</span><span class="op">:</span> <span class="str">"temporal.internal:7233"</span>
+    <span class="kw">default_mode</span><span class="op">:</span> async
+    <span class="kw">allowed_workflows</span><span class="op">:</span> [IngestDocument, ChatTurn]
+      </div>
+
+      <div class="tip-box rounded-lg p-4 mb-8">
+        <p class="text-sm"><strong class="text-agreen">Why three workers?</strong> The <code>llm-worker</code> runs on GPU machines with <code>max_concurrent_activities: 4</code> (limited by VRAM). The <code>ingestion-worker</code> runs on CPU instances for text parsing. The <code>chat-worker</code> handles fast vector lookups at high concurrency. Temporal routes work to the right queue automatically.</p>
+      </div>
+
+      <!-- Step E: How chat sessions work -->
+      <h3 class="font-serif text-xl mb-3">E. Chat Session Flow — Temporal in Every Interaction</h3>
+      <p class="text-sm text-dim mb-6">Here's how every single chat message flows through Temporal. The API gateway is just a thin client — all reliability lives in the workflow.</p>
+
+      <div class="space-y-3 mb-8">
+        <div class="flex items-start gap-4 p-4 rounded-lg bg-card border border-bdr">
+          <span class="w-7 h-7 rounded-full bg-accent/10 text-accent text-xs font-bold flex items-center justify-center shrink-0 font-mono mt-0.5">1</span>
+          <div>
+            <h5 class="text-sm font-semibold mb-1">User sends a message</h5>
+            <p class="text-xs text-dim">The frontend POST to <code>/api/chat</code>. The API gateway uses the generated client to call <code>client.execute_chat_turn(message, workflow_id)</code> — this <strong>blocks</strong> until the workflow completes.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-lg bg-card border border-bdr">
+          <span class="w-7 h-7 rounded-full bg-agreen/10 text-agreen text-xs font-bold flex items-center justify-center shrink-0 font-mono mt-0.5">2</span>
+          <div>
+            <h5 class="text-sm font-semibold mb-1">ChatTurn workflow starts</h5>
+            <p class="text-xs text-dim">Temporal schedules the workflow on the <code>ai-pipeline</code> queue. Step 1: <code>retrieve_context</code> runs as a sync activity — queries the vector DB with the user's message, returns the top-K matching document chunks.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-lg bg-card border border-bdr">
+          <span class="w-7 h-7 rounded-full bg-aamber/10 text-aamber text-xs font-bold flex items-center justify-center shrink-0 font-mono mt-0.5">3</span>
+          <div>
+            <h5 class="text-sm font-semibold mb-1">LLM call with context</h5>
+            <p class="text-xs text-dim">Step 2: The workflow assembles a prompt (user message + retrieved context) and dispatches <code>call_llm</code> to the <code>llm-inference</code> queue. The LLM worker picks it up, starts streaming tokens, and heartbeats every few seconds. If it crashes, Temporal retries on another GPU worker.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-lg bg-card border border-bdr">
+          <span class="w-7 h-7 rounded-full bg-accent2/10 text-accent2 text-xs font-bold flex items-center justify-center shrink-0 font-mono mt-0.5">4</span>
+          <div>
+            <h5 class="text-sm font-semibold mb-1">Response returned</h5>
+            <p class="text-xs text-dim">The LLM activity completes with an <code>LLMResponse</code>. The workflow finishes. The <code>execute_workflow</code> call unblocks and the API gateway returns the response to the user. Total time: typically 2-10 seconds, with full retry guarantees on every step.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box rounded-lg p-4 mb-8">
+        <p class="text-sm"><strong class="text-accent">Agent pattern:</strong> For multi-turn agents that use tools (search, code execution, API calls), each tool invocation becomes an activity. The agent's "reasoning loop" is the workflow — it calls <code>call_llm</code>, checks if the LLM wants to use a tool, executes the tool activity, feeds the result back, and loops via <code>continue_as_new</code> if the conversation exceeds history limits. Temporal makes the entire agent loop durable and retryable.</p>
+      </div>
+
+      <!-- Final: full YAML download hint -->
+      <div class="p-5 rounded-xl bg-card border border-accent/20">
+        <h4 class="text-sm font-semibold mb-2">Try it yourself</h4>
+        <p class="text-sm text-dim">Copy any of the YAML blocks above into a file called <code>config.yaml</code>, then POST it to the builder API:</p>
+        <div class="code-block mono text-[11px] mt-3">
+<span class="fn">curl</span> <span class="op">-X</span> POST http://localhost:8000/api/generate \<br>
+&nbsp;&nbsp;<span class="op">-H</span> <span class="str">"Content-Type: text/yaml"</span> \<br>
+&nbsp;&nbsp;<span class="op">-d</span> @config.yaml
+        </div>
+        <p class="text-sm text-dim mt-3">Or paste the complete YAML into the builder UI's <strong>Preview YAML</strong> modal (coming soon: YAML import), configure any remaining fields visually, and hit <strong class="text-accent">Generate</strong>.</p>
+      </div>
+    </div>
+  </article>
+
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
