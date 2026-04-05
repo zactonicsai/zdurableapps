@@ -5,63 +5,78 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/workflow/temporal-worker-go/activities"
 	"github.com/workflow/temporal-worker-go/models"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 // GenericWorkflow is the Temporal workflow function.
-// Its name and signature match the Java @WorkflowInterface:
 //
-//	@WorkflowMethod
-//	String execute(WorkflowData data);
+// Registered as "GenericWorkflow" to match the Java @WorkflowInterface name.
+// Chains four activities sequentially, passing enriched data between each step.
 //
-// Temporal routes by workflow type name "GenericWorkflow" which is
-// registered in the worker with workflow.RegisterOptions{Name: "GenericWorkflow"}.
+// CRITICAL: activities are dispatched by STRING name (not Go function reference)
+// so the names match exactly what the worker registered via RegisterActivityWithOptions.
 func GenericWorkflow(ctx workflow.Context, data models.WorkflowData) (string, error) {
 
 	logger := workflow.GetLogger(ctx)
-	logger.Info("GenericWorkflow started",
+	wfInfo := workflow.GetInfo(ctx)
+
+	logger.Info(">>> GenericWorkflow STARTED",
 		"name", data.Name,
 		"value", data.Value,
 		"status", data.Status,
+		"taskQueue", wfInfo.TaskQueueName,
+		"workflowId", wfInfo.WorkflowExecution.ID,
 	)
 
 	// ── activity options (shared by all four steps) ─────
-	actOpts := workflow.ActivityOptions{
-		StartToCloseTimeout: 30 * time.Second,
+	// TaskQueue MUST be set explicitly so Temporal schedules
+	// activity tasks on the same queue the worker polls.
+	// Without this, cross-language dispatch can silently drop tasks.
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		TaskQueue:            wfInfo.TaskQueueName, // ← same queue as workflow
+		StartToCloseTimeout:  30 * time.Second,
+		ScheduleToStartTimeout: 10 * time.Second,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:    time.Second,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    30 * time.Second,
 			MaximumAttempts:    3,
 		},
-	}
-	ctx = workflow.WithActivityOptions(ctx, actOpts)
+	})
 
-	var act *activities.Activities // nil receiver; Temporal resolves methods by name
-
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 	// Step 1 – Review Request Agent
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
+
+	logger.Info(">>> Step 1: Dispatching ReviewRequestAgent",
+		"activityType", models.ActivityReviewRequest,
+		"taskQueue", wfInfo.TaskQueueName,
+	)
 
 	reviewInput := models.ReviewRequestInput{
 		OriginalData: data,
 	}
 
 	var reviewOutput models.ReviewRequestOutput
-	if err := workflow.ExecuteActivity(ctx, act.ReviewRequestAgent, reviewInput).
-		Get(ctx, &reviewOutput); err != nil {
-		return "", fmt.Errorf("ReviewRequestAgent failed: %w", err)
+	err := workflow.ExecuteActivity(
+		ctx,
+		models.ActivityReviewRequest, // STRING name – matches worker registration
+		reviewInput,
+	).Get(ctx, &reviewOutput)
+	if err != nil {
+		return "", fmt.Errorf("Step 1 %s failed: %w", models.ActivityReviewRequest, err)
 	}
 
-	logger.Info("ReviewRequestAgent completed",
+	logger.Info(">>> Step 1 COMPLETE",
 		"approved", reviewOutput.Approved,
 		"reason", reviewOutput.Reason,
 	)
 
+	// Early exit if rejected
 	if !reviewOutput.Approved {
+		logger.Info(">>> Workflow exiting early – request rejected")
 		result := models.WorkflowResult{
 			Answer:     "Request rejected: " + reviewOutput.Reason,
 			Confidence: 0.0,
@@ -72,9 +87,14 @@ func GenericWorkflow(ctx workflow.Context, data models.WorkflowData) (string, er
 		return toJSON(result), nil
 	}
 
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 	// Step 2 – Add Meaning Agent (NLP + context)
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
+
+	logger.Info(">>> Step 2: Dispatching AddMeaningAgent",
+		"activityType", models.ActivityAddMeaning,
+		"taskQueue", wfInfo.TaskQueueName,
+	)
 
 	meaningInput := models.AddMeaningInput{
 		ReviewedData: reviewOutput.Reviewed,
@@ -82,44 +102,62 @@ func GenericWorkflow(ctx workflow.Context, data models.WorkflowData) (string, er
 	}
 
 	var meaningOutput models.AddMeaningOutput
-	if err := workflow.ExecuteActivity(ctx, act.AddMeaningAgent, meaningInput).
-		Get(ctx, &meaningOutput); err != nil {
-		return "", fmt.Errorf("AddMeaningAgent failed: %w", err)
+	err = workflow.ExecuteActivity(
+		ctx,
+		models.ActivityAddMeaning, // STRING name
+		meaningInput,
+	).Get(ctx, &meaningOutput)
+	if err != nil {
+		return "", fmt.Errorf("Step 2 %s failed: %w", models.ActivityAddMeaning, err)
 	}
 
-	logger.Info("AddMeaningAgent completed",
+	logger.Info(">>> Step 2 COMPLETE",
 		"intent", meaningOutput.Intent,
 		"sentiment", meaningOutput.Sentiment,
-		"entities", meaningOutput.Entities,
+		"entityCount", len(meaningOutput.Entities),
 	)
 
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 	// Step 3 – Log Activity Agent
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 
-	info := workflow.GetInfo(ctx)
+	logger.Info(">>> Step 3: Dispatching LogActivityAgent",
+		"activityType", models.ActivityLogActivity,
+		"taskQueue", wfInfo.TaskQueueName,
+	)
+
 	logInput := models.LogActivityInput{
 		Stage:        "post-nlp-enrichment",
-		WorkflowID:   info.WorkflowExecution.ID,
+		WorkflowID:   wfInfo.WorkflowExecution.ID,
 		Data:         meaningOutput.Enriched,
 		NLPIntent:    meaningOutput.Intent,
 		NLPSentiment: meaningOutput.Sentiment,
 	}
 
 	var logOutput models.LogActivityOutput
-	if err := workflow.ExecuteActivity(ctx, act.LogActivityAgent, logInput).
-		Get(ctx, &logOutput); err != nil {
-		return "", fmt.Errorf("LogActivityAgent failed: %w", err)
+	err = workflow.ExecuteActivity(
+		ctx,
+		models.ActivityLogActivity, // STRING name
+		logInput,
+	).Get(ctx, &logOutput)
+	if err != nil {
+		return "", fmt.Errorf("Step 3 %s failed: %w", models.ActivityLogActivity, err)
 	}
 
-	logger.Info("LogActivityAgent completed",
+	logger.Info(">>> Step 3 COMPLETE",
 		"logId", logOutput.LogID,
 		"timestamp", logOutput.Timestamp,
+		"logged", logOutput.Logged,
 	)
 
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 	// Step 4 – AI Answer Agent
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
+
+	logger.Info(">>> Step 4: Dispatching AIAnswerAgent",
+		"activityType", models.ActivityAIAnswer,
+		"taskQueue", wfInfo.TaskQueueName,
+	)
 
 	answerInput := models.AIAnswerInput{
 		OriginalData: data,
@@ -130,19 +168,24 @@ func GenericWorkflow(ctx workflow.Context, data models.WorkflowData) (string, er
 	}
 
 	var answerOutput models.AIAnswerOutput
-	if err := workflow.ExecuteActivity(ctx, act.AIAnswerAgent, answerInput).
-		Get(ctx, &answerOutput); err != nil {
-		return "", fmt.Errorf("AIAnswerAgent failed: %w", err)
+	err = workflow.ExecuteActivity(
+		ctx,
+		models.ActivityAIAnswer, // STRING name
+		answerInput,
+	).Get(ctx, &answerOutput)
+	if err != nil {
+		return "", fmt.Errorf("Step 4 %s failed: %w", models.ActivityAIAnswer, err)
 	}
 
-	logger.Info("AIAnswerAgent completed",
+	logger.Info(">>> Step 4 COMPLETE",
 		"confidence", answerOutput.Confidence,
 		"model", answerOutput.Model,
+		"answerLen", len(answerOutput.Answer),
 	)
 
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 	// Assemble final result
-	// ─────────────────────────────────────────────────────
+	// ═════════════════════════════════════════════════════
 
 	result := models.WorkflowResult{
 		Answer:     answerOutput.Answer,
@@ -155,7 +198,11 @@ func GenericWorkflow(ctx workflow.Context, data models.WorkflowData) (string, er
 
 	resultJSON := toJSON(result)
 
-	logger.Info("GenericWorkflow completed", "resultLength", len(resultJSON))
+	logger.Info(">>> GenericWorkflow COMPLETED – all 4 activities executed",
+		"finalStatus", result.Status,
+		"resultLength", len(resultJSON),
+	)
+
 	return resultJSON, nil
 }
 

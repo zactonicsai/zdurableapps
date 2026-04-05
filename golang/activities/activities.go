@@ -9,17 +9,13 @@ import (
 	"go.temporal.io/sdk/activity"
 )
 
-// Activities groups all activity methods so they can be registered
-// on the worker in one call.
-type Activities struct{}
-
 // ─────────────────────────────────────────────────────────
 // 1. ReviewRequestAgent
 //    Validates the incoming request and decides whether to
 //    approve it for downstream processing.
 // ─────────────────────────────────────────────────────────
 
-func (a *Activities) ReviewRequestAgent(
+func ReviewRequestAgent(
 	ctx context.Context,
 	input models.ReviewRequestInput,
 ) (*models.ReviewRequestOutput, error) {
@@ -42,6 +38,12 @@ func (a *Activities) ReviewRequestAgent(
 	reviewed := input.OriginalData
 	reviewed.Status = models.StatusSet // advance status
 
+	logger.Info("ReviewRequestAgent: decision",
+		"approved", approved,
+		"reason", reason,
+		"nextStatus", reviewed.Status,
+	)
+
 	return &models.ReviewRequestOutput{
 		Approved: approved,
 		Reason:   reason,
@@ -55,7 +57,7 @@ func (a *Activities) ReviewRequestAgent(
 //    and builds a context map for downstream agents.
 // ─────────────────────────────────────────────────────────
 
-func (a *Activities) AddMeaningAgent(
+func AddMeaningAgent(
 	ctx context.Context,
 	input models.AddMeaningInput,
 ) (*models.AddMeaningOutput, error) {
@@ -94,6 +96,12 @@ func (a *Activities) AddMeaningAgent(
 	enriched.Text = fmt.Sprintf("[NLP enriched] %s | intent=%s sentiment=%s",
 		enriched.Text, intent, sentiment)
 
+	logger.Info("AddMeaningAgent: enrichment complete",
+		"intent", intent,
+		"sentiment", sentiment,
+		"entityCount", len(entities),
+	)
+
 	return &models.AddMeaningOutput{
 		Intent:    intent,
 		Entities:  entities,
@@ -109,7 +117,7 @@ func (a *Activities) AddMeaningAgent(
 //    stage (stubbed – returns a static log ID).
 // ─────────────────────────────────────────────────────────
 
-func (a *Activities) LogActivityAgent(
+func LogActivityAgent(
 	ctx context.Context,
 	input models.LogActivityInput,
 ) (*models.LogActivityOutput, error) {
@@ -125,6 +133,10 @@ func (a *Activities) LogActivityAgent(
 	now := time.Now().UTC()
 	logID := fmt.Sprintf("LOG-%s-%d", input.WorkflowID, now.UnixMilli())
 
+	logger.Info("LogActivityAgent: entry recorded",
+		"logId", logID,
+	)
+
 	return &models.LogActivityOutput{
 		LogID:     logID,
 		Timestamp: now.Format(time.RFC3339),
@@ -138,7 +150,7 @@ func (a *Activities) LogActivityAgent(
 //    answer (stubbed with static response data).
 // ─────────────────────────────────────────────────────────
 
-func (a *Activities) AIAnswerAgent(
+func AIAnswerAgent(
 	ctx context.Context,
 	input models.AIAnswerInput,
 ) (*models.AIAnswerOutput, error) {
@@ -171,6 +183,12 @@ func (a *Activities) AIAnswerAgent(
 	responseData := input.OriginalData
 	responseData.Status = models.StatusGo
 	responseData.Text = answer
+
+	logger.Info("AIAnswerAgent: answer generated",
+		"confidence", confidence,
+		"model", "stubbed-gpt-4o-agent-v1",
+		"answerLen", len(answer),
+	)
 
 	return &models.AIAnswerOutput{
 		Answer:       answer,

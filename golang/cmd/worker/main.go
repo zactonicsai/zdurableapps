@@ -5,14 +5,15 @@ import (
 	"os"
 
 	"github.com/workflow/temporal-worker-go/activities"
+	"github.com/workflow/temporal-worker-go/models"
 	wf "github.com/workflow/temporal-worker-go/workflow"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 )
 
 const (
-	defaultTaskQueue = "default-task-queue"
 	defaultTarget    = "localhost:7233"
 	defaultNamespace = "default"
 )
@@ -20,7 +21,7 @@ const (
 func main() {
 	target := envOr("TEMPORAL_TARGET", defaultTarget)
 	namespace := envOr("TEMPORAL_NAMESPACE", defaultNamespace)
-	taskQueue := envOr("TEMPORAL_TASK_QUEUE", defaultTaskQueue)
+	taskQueue := envOr("TEMPORAL_TASK_QUEUE", models.DefaultTaskQueue)
 
 	log.Printf("┌──────────────────────────────────────────────┐")
 	log.Printf("│  Temporal Go Worker                          │")
@@ -43,20 +44,37 @@ func main() {
 	// ── create worker ───────────────────────────────────
 	w := worker.New(c, taskQueue, worker.Options{})
 
-	// Register the workflow with the EXACT name the Java client uses.
-	// Java derives the type name from the interface: "GenericWorkflow".
+	// ── register workflow ───────────────────────────────
+	// Name MUST match the Java @WorkflowInterface type name
 	w.RegisterWorkflowWithOptions(wf.GenericWorkflow, workflow.RegisterOptions{
-		Name: "GenericWorkflow",
+		Name: models.WorkflowTypeName,
 	})
+	log.Printf("  ✓ Registered workflow: %s", models.WorkflowTypeName)
 
-	// Register all four activity methods.
-	w.RegisterActivity(&activities.Activities{})
+	// ── register activities ─────────────────────────────
+	// Name strings here MUST match the string names used in
+	// workflow.ExecuteActivity(ctx, "ReviewRequestAgent", ...)
+	// inside GenericWorkflow. Both pull from models.Activity* constants.
+
+	registerActivity(w, activities.ReviewRequestAgent, models.ActivityReviewRequest)
+	registerActivity(w, activities.AddMeaningAgent, models.ActivityAddMeaning)
+	registerActivity(w, activities.LogActivityAgent, models.ActivityLogActivity)
+	registerActivity(w, activities.AIAnswerAgent, models.ActivityAIAnswer)
 
 	// ── run ─────────────────────────────────────────────
+	log.Printf("Worker polling task queue: %s", taskQueue)
 	log.Println("Starting worker… (Ctrl-C to stop)")
 	if err := w.Run(worker.InterruptCh()); err != nil {
 		log.Fatalf("Worker exited with error: %v", err)
 	}
+}
+
+// registerActivity registers a function with an explicit name and logs it.
+func registerActivity(w worker.Worker, fn any, name string) {
+	w.RegisterActivityWithOptions(fn, activity.RegisterOptions{
+		Name: name,
+	})
+	log.Printf("  ✓ Registered activity: %s", name)
 }
 
 func envOr(key, fallback string) string {
